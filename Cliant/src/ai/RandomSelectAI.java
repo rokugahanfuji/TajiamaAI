@@ -10,6 +10,7 @@ import blokusElements.Piece;
 import gui.MessageRecevable;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -21,7 +22,7 @@ import network.ServerConnecter;
  * @author koji
  */
 public class RandomSelectAI extends BlokusAI{
-    private static final String AINAME = "RandomAI";
+    private static final String AINAME = "HAYASHI";
 
     //自分自身の処理状態
     private int state;
@@ -39,6 +40,7 @@ public class RandomSelectAI extends BlokusAI{
     
     public RandomSelectAI(Game game){
         super(game);
+        this.TurnCount = 0;
         this.state = Game.STATE_WAIT_PLAYER_CONNECTION;
         this.usedPeices = new ArrayList<String>();
         this.havingPeices = new ArrayList<String>();
@@ -49,6 +51,7 @@ public class RandomSelectAI extends BlokusAI{
 
     public int[][] recevedData;
     public int receveline;
+    private int TurnCount;
     
     //メッセージ解析用の正規表現パターン
     private Pattern PLAYEDMSGPTN = Pattern.compile("401 PLAYED ([0-1]) (1?[0-9]) (1?[0-9]) ([0-5][0-9A-F])-([0-8])");
@@ -128,23 +131,74 @@ public class RandomSelectAI extends BlokusAI{
     /** ピースの配置を考えるメソッド */
     private String SelectPutPiece(HashMap<String,ArrayList<Point>> canPutList){
         //TODO 最低限、ここを修正すれば自分なりのプログラムが作れます。
-
         //乱数をつかって１つ置く場所を決める
         String message;
         if(canPutList.keySet().size() > 0){
-            Random rd = new Random(System.currentTimeMillis());
-            String[] ids = canPutList.keySet().toArray(new String[0]);
-            String pid = ids[rd.nextInt(ids.length)];
-            String[] pdata = pid.split("-");
-            Piece putPiece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
-            ArrayList<Point> points = canPutList.get(pid);
-            Point putPlace = points.get(rd.nextInt(points.size()));
-
+            String pid = "";
+            String[] pdata;
+            pdata = new String[2];
+            String[] ids;
+            Piece putPiece;
+            Point putPlace = new Point();
+            ArrayList<Point> points;
+            if(TurnCount < 3){
+                switch(TurnCount){
+                    case 0:
+                        if(this.myPlayerID == 0){
+                            pid = "5A-1";
+                            putPlace.x = 0;
+                            putPlace.y = 0;
+                        } else {
+                            pid = "5A-4";
+                            putPlace.x = 12;
+                            putPlace.y = 12;
+                        }
+                        break;
+                    case 1:
+                        if(this.myPlayerID == 0){
+                            pid = "5B-0";
+                            putPlace.x = 2;
+                            putPlace.y = 2;
+                        } else {
+                            pid = "5B-0";
+                            putPlace.x = 10;
+                            putPlace.y = 10;
+                        }
+                        break;
+                    case 2:
+                        if(this.myPlayerID == 0){
+                            pid = "57-0";
+                            putPlace.x = 4;
+                            putPlace.y = 4;
+                        } else {
+                            pid = "57-2";
+                            putPlace.x = 8;
+                            putPlace.y = 8;
+                        }
+                        break;      
+                }
+                pdata = pid.split("-");
+                putPiece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
+                
+                TurnCount++;
+            }else{
+                Random rd = new Random(System.currentTimeMillis());
+                ids = canPutList.keySet().toArray(new String[0]);
+                
+                
+                System.out.println(Arrays.toString(ids));
+                pid = ids[rd.nextInt(ids.length)];
+                pdata = pid.split("-");
+                putPiece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
+                points = canPutList.get(pid);
+                putPlace = points.get(rd.nextInt(points.size()));
+            }
             //自分のデータを更新し、サーバにもデータを送る
             this.gameBoard.play(this.myPlayerID, putPiece, putPlace.x, putPlace.y);
             this.usedPeices.add(pdata[0]);
             this.havingPeices.remove(pdata[0]);
             message = "405 PLAY "+putPlace.x+" "+putPlace.y+" "+pid;
+            
         } else {
             //おく手がなければパス
             this.gameBoard.pass(this.myPlayerID);
