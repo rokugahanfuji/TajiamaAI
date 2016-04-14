@@ -22,7 +22,7 @@ import network.ServerConnecter;
  * @author koji
  */
 public class RandomSelectAI extends BlokusAI{
-    private static final String AINAME = "HAYASHI MASAYA";
+    private static final String AINAME = "HAYASHI";
 
     //自分自身の処理状態
     private int state;
