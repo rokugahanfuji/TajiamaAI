@@ -6,6 +6,7 @@ package simpleclient;
 
 import ai.BlokusAI;
 import ai.RandomSelectAI;
+import ai.TajimaAI;
 import blokusElements.Game;
 import gui.ClientGUI;
 import java.util.logging.Level;
@@ -35,7 +36,7 @@ public class SimpleClient {
             Logger.getLogger(SimpleClient.class.getName()).log(Level.SEVERE, null, ex);
         }
         Game myGame = new Game();
-        BlokusAI myAI = new RandomSelectAI(myGame);
+        BlokusAI myAI = new TajimaAI(myGame);
         ClientGUI gui = new ClientGUI(myAI);
         
         gui.setVisible(true);

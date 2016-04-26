@@ -201,7 +201,7 @@ public class RandomSelectAI extends BlokusAI{
             }
             
             //手の評価を表示
-            this.nextPutCount(this.myPlayerID,putPiece,putPlace.x,putPlace.y);
+            //this.nextPutCount(this.myPlayerID,putPiece,putPlace.x,putPlace.y);
             BoardSub.ValidCornerTroutSet(this.myPlayerID, this.gameBoard.getBoardState());
             //手の評価リストを返却
             
@@ -218,8 +218,8 @@ public class RandomSelectAI extends BlokusAI{
         return message;
     }
     
-    //その手を置いた後に、どれだけ置けるか
-    private void nextPutCount(int playerID,Piece piece,int x,int y){
+    //次に置く手の評価を行う関数
+    private void nextPutAssess(int playerID,Piece piece,int x,int y){
         int[][] nowBoard = this.gameBoard.getBoardState();
         int[][] shadowBoard = this.gameBoard.getBoardState();
         
@@ -246,8 +246,7 @@ public class RandomSelectAI extends BlokusAI{
 
         //System.out.println("手によって減る数；");
         //System.out.println("手によって増える数；");
-    }
-    
+    } 
     
     @Override
     public void setConnecter(ServerConnecter c) {

@@ -7,6 +7,7 @@ package blokusElements;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  *
@@ -31,15 +32,11 @@ public class BoardSub extends Board {
                     }
                 }
             }
-
         } catch(java.lang.ArrayIndexOutOfBoundsException e){
             //e.printStackTrace();
             return null;
         }
 
-        
-        
-        
         return exBoard;
     }
     
@@ -53,63 +50,63 @@ public class BoardSub extends Board {
                 ValidCornerTroutPoint = new Point();
                 if((i-1 > -1) && (j > 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
                     if(boardState[i][j+1] == -1 && boardState[i][j-1] == -1 && boardState[i-1][j] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i-1][j-1] == 1 || boardState[i+1][j-1] == 1 || boardState[i-1][j+1] == 1 || boardState[i+1][j+1] == 1){
+                        if(boardState[i-1][j-1] == playerID || boardState[i+1][j-1] == playerID || boardState[i-1][j+1] == playerID || boardState[i+1][j+1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i < 1) && (j > 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
                     if(boardState[i][j+1] == -1 && boardState[i][j-1] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i+1][j-1] == 1 || boardState[i+1][j+1] == 1){
+                        if(boardState[i+1][j-1] == playerID || boardState[i+1][j+1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i > 1) && (j < 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
                     if(boardState[i][j+1] == -1 && boardState[i-1][j] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i-1][j+1] == 1 || boardState[i+1][j+1] == 1){
+                        if(boardState[i-1][j+1] == playerID || boardState[i+1][j+1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i > 1) && (j > 1) && (i == BOARDSIZE-1) && (j < BOARDSIZE-1)){
                     if(boardState[i][j+1] == -1 && boardState[i][j-1] == -1 && boardState[i-1][j] == -1){
-                        if(boardState[i-1][j-1] == 1 || boardState[i-1][j+1] == 1){
+                        if(boardState[i-1][j-1] == playerID || boardState[i-1][j+1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i > 1) && (j > 1) && (i < BOARDSIZE-1) && (j == BOARDSIZE-1)){
                     if(boardState[i][j-1] == -1 && boardState[i-1][j] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i-1][j-1] == 1 || boardState[i+1][j-1] == 1){
+                        if(boardState[i-1][j-1] == playerID || boardState[i+1][j-1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i < 1) && (j < 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
                     if(boardState[i][j+1] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i+1][j+1] == 1){
+                        if(boardState[i+1][j+1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i > 1) && (j < 1) && (i > BOARDSIZE-1) && (j < BOARDSIZE-1)){
                     if(boardState[i][j+1] == -1 && boardState[i-1][j] == -1){
-                        if(boardState[i-1][j+1] == 1){
+                        if(boardState[i-1][j+1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i > 1) && (j > 1) && (i > BOARDSIZE-1) && (j > BOARDSIZE-1)){
                     if(boardState[i][j-1] == -1 && boardState[i-1][j] == -1){
-                        if(boardState[i-1][j-1] == 1){
+                        if(boardState[i-1][j-1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
                     }
                 }else if((i < 1) && (j > 1) && (i < BOARDSIZE-1) && (j > BOARDSIZE-1)){
                     if(boardState[i][j-1] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i+1][j-1] == 1){
+                        if(boardState[i+1][j-1] == playerID){
                             ValidCornerTroutPoint.setLocation(j, i);
                             ValidCornerTroutList.add(ValidCornerTroutPoint);
                         }
@@ -117,7 +114,6 @@ public class BoardSub extends Board {
                 }
             }
         }
-        System.out.println(ValidCornerTroutList);
         return ValidCornerTroutList;
     }
     
