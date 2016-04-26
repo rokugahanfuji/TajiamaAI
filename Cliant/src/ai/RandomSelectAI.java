@@ -5,6 +5,7 @@
 package ai;
 
 import blokusElements.Board;
+import blokusElements.BoardSub;
 import blokusElements.Game;
 import blokusElements.Piece;
 import gui.MessageRecevable;
@@ -22,7 +23,7 @@ import network.ServerConnecter;
  * @author koji
  */
 public class RandomSelectAI extends BlokusAI{
-    private static final String AINAME = "HAYASHI MASAYTA";
+    private static final String AINAME = "HAYASHI MASAYA";
 
     //自分自身の処理状態
     private int state;
@@ -182,23 +183,33 @@ public class RandomSelectAI extends BlokusAI{
                 
                 TurnCount++;
             }else{
+                //canPutList -> Key:57-2 Value:Array(ピースが置ける位置)
+                //rd  -> random
+                //ids -> canPutListキーを配列
+                //pid -> ピースID 例；"57-2" （初期ではランダム）
+                //pdata[0] -> "57" ピース形 
+                //pdata[1] -> "2"  回転  
+                //putPiece  pdataをもとに作成したPiece型
+                //points -> pidをもとにcanPutList
                 Random rd = new Random(System.currentTimeMillis());
                 ids = canPutList.keySet().toArray(new String[0]);
-                
-                
-                System.out.println(Arrays.toString(ids));
                 pid = ids[rd.nextInt(ids.length)];
                 pdata = pid.split("-");
                 putPiece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
                 points = canPutList.get(pid);
                 putPlace = points.get(rd.nextInt(points.size()));
             }
+            
+            //手の評価を表示
+            this.nextPutCount(this.myPlayerID,putPiece,putPlace.x,putPlace.y);
+            BoardSub.ValidCornerTroutSet(this.myPlayerID, this.gameBoard.getBoardState());
+            //手の評価リストを返却
+            
             //自分のデータを更新し、サーバにもデータを送る
             this.gameBoard.play(this.myPlayerID, putPiece, putPlace.x, putPlace.y);
             this.usedPeices.add(pdata[0]);
             this.havingPeices.remove(pdata[0]);
             message = "405 PLAY "+putPlace.x+" "+putPlace.y+" "+pid;
-            
         } else {
             //おく手がなければパス
             this.gameBoard.pass(this.myPlayerID);
@@ -206,6 +217,37 @@ public class RandomSelectAI extends BlokusAI{
         }
         return message;
     }
+    
+    //その手を置いた後に、どれだけ置けるか
+    private void nextPutCount(int playerID,Piece piece,int x,int y){
+        int[][] nowBoard = this.gameBoard.getBoardState();
+        int[][] shadowBoard = this.gameBoard.getBoardState();
+        
+        shadowBoard = BoardSub.putPiece(playerID,piece,x,y,shadowBoard);
+        
+        
+        
+        
+        
+        /*
+        Hashmap
+        for (String Key : canPutList.keySet()){
+            for (Point Value : canPutList.get(Key)){
+                int[][] shadowBoard = this.gameBoard.getBoardState();
+                
+                
+                
+                System.out.println(Value);
+                
+            }
+            
+        }
+        */
+
+        //System.out.println("手によって減る数；");
+        //System.out.println("手によって増える数；");
+    }
+    
     
     @Override
     public void setConnecter(ServerConnecter c) {
