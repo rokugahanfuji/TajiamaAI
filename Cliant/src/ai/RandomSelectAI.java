@@ -110,6 +110,7 @@ public class RandomSelectAI extends BlokusAI{
     /** 配置可能なピースのIDとその場所の一覧を取得する */
     private HashMap<String,ArrayList<Point>> getCanPutList(){
         HashMap<String,ArrayList<Point>> canPutList = new HashMap<String,ArrayList<Point>>();
+        
         for(String id:this.havingPeices){
             for(int d=0;d<8;d++){
                 String fullID = id+"-"+d;
