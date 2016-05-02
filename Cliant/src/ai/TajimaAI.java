@@ -173,7 +173,7 @@ public class TajimaAI extends BlokusAI{
             //評価リスト
             HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
             //3と他の手
-            if(TurnCount < 0){
+            if(TurnCount < 3){
                 pdata = this.theFirstThreeChoices();
                 this.nextPutAssess(pdata);
                 TurnCount++;
