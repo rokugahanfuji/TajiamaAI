@@ -26,7 +26,7 @@ import network.ServerConnecter;
  * @author Admin
  */
 public class TajimaAI extends BlokusAI{
-    private static final String AINAME = "TajiAI 5/2";
+    private static final String AINAME = "Taji";
 
     //自分自身の処理状態
     private int state;
@@ -86,6 +86,7 @@ public class TajimaAI extends BlokusAI{
                 }
             }
         }else{
+        //角リストをもとに、canPutListを生成する。
             for(String id:this.havingPeices){
                 for (int d = 0; d < 8; d++) {
                     String fullID = id+"-"+d;
@@ -95,16 +96,15 @@ public class TajimaAI extends BlokusAI{
                         int[][] pieceshape = piece.getPiecePattern();
                         int width = pieceshape[0].length;
                         int height = pieceshape.length;
-                        
-                        
-                        int max;
+                        int pieceMax = 0;
+                        //ピースの長さが長い方を基準とする。
                         if(width > height){
-                            max = width;
+                            pieceMax = width;
                         }else{
-                            max = height;
+                            pieceMax = height;
                         }
-                        
-                        switch(max){
+                        //ピースの長さ分だけ、必要な探索を行う。
+                        switch(pieceMax){
                             case 1:
                                 break;
                             case 2:
@@ -153,11 +153,6 @@ public class TajimaAI extends BlokusAI{
                                 break;
                             
                         }
-
-                        //左上
-                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x,pos.y) > 0){
-                            putlist.add(new Point(pos.x,pos.y));
-                        }
                     }
                     if(putlist.size() > 0){
                         canPutList.put(fullID, putlist);
@@ -172,20 +167,19 @@ public class TajimaAI extends BlokusAI{
     private String SelectPutPiece(HashMap<String,ArrayList<Point>> canPutList){
         String message;
         String[] pdata = new String[4];     //ピース番号分割用  pdata[0] ピース番号-回転-X-Y　例：5A-3-1-2
-        int max = 0;
-        String[] maxpid = new String[4];
-        HashMap<String,ArrayList<Point>> canList;
         
+        //canPutListに含まれるものがあれば、AIで思考 0ならばパス
         if(canPutList.keySet().size() > 0){
             //評価リスト
             HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
             //3と他の手
-            if(TurnCount < 3){
+            if(TurnCount < 0){
                 pdata = this.theFirstThreeChoices();
                 this.nextPutAssess(pdata);
                 TurnCount++;
                 message = finishMove(pdata);
             }else{
+                //3手以降の手を選択する。
                 /*
                 //ランダムセレクト用
                 pdata = this.randomSelect(canPutList);
@@ -193,18 +187,22 @@ public class TajimaAI extends BlokusAI{
                 message = finishMove(pdata);
                 */
                 
-                
                 //ここからAI
-                canList = new HashMap<String,ArrayList<Point>>();
-                canList = this.getCanPutList();
+                String[] pieceMaxpid = new String[4];
+                int pieceMax = 0;
+                HashMap<String,ArrayList<Point>> canList = canList = this.getCanPutList();
+                //canPutList Key(String):XX-X Value(ArrayList<Point>):{(X,Y),(X,Y)....}
                 for(String pid:canList.keySet()){
                     String canPieceName[] = pid.split("-");
+                    //String配列に加えたりする用のArrayList（暇があったら修正したい）
                     ArrayList<String> list = new ArrayList(Arrays.asList(canPieceName));
                     for(Point point:canList.get(pid)){
+                        //評価値
                         int evaluation = 0;
-                        
+                        //リストにx,y座標を代入して評価、x,yを消去して再び評価を繰り返す
                         list.add(String.valueOf(point.x));
                         list.add(String.valueOf(point.y));
+                        //評価をし、評価済みリストに代入
                         evaluation = nextPutAssess(list.toArray(new String[0]));
                         evaList.put(list.toArray(new String[0]),evaluation);
                         list.remove(list.size()-1);
@@ -212,17 +210,16 @@ public class TajimaAI extends BlokusAI{
                     }
                 }
                 
+                //評価リストのうち、もっとも評価値が高いものを選定する、
                 for(String[] pid:evaList.keySet()){
-                    if(evaList.get(pid) >= max){
-                        max = evaList.get(pid);
-                        maxpid = pid;
+                    if(evaList.get(pid) >= pieceMax){
+                        pieceMax = evaList.get(pid);
+                        pieceMaxpid = pid;
                     }
                 }
-                message = finishMove(maxpid);
-                
-                
+                message = finishMove(pieceMaxpid);
                 //評価値
-                System.out.println("評価値；"+max);       
+                System.out.println("評価値；"+pieceMax);       
                 TurnCount++;
             }
             
@@ -237,7 +234,7 @@ public class TajimaAI extends BlokusAI{
     //本来はcanputLISTが、自身の評価、nowCornerListになる。
     
     
-    //次に置く手の評価を行う関数
+    //評価関数
     private int nextPutAssess(String[] pdata){
         Piece piece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
         int x = Integer.parseInt(pdata[2]);
@@ -290,7 +287,7 @@ public class TajimaAI extends BlokusAI{
         */
         
         //評価値
-        //加点数
+        //加点方法
         Katen = onlyA.size()*Integer.parseInt(pdata[0].substring(0,1));
         Hatten = onlyB.size();
         if(Katen >= 10){
@@ -396,13 +393,13 @@ public class TajimaAI extends BlokusAI{
                 String sendmessage = "101 NAME "+AINAME;
                 this.connecter.sendMessage(sendmessage);
                 this.userInterface.addMessage(sendmessage);
-            } else if(message.toUpperCase().equals("102 PLYERID 0")){
+            } else if(message.toUpperCase().equals("102 PLAYERID 0")){
                 //先手の場合
                 this.myPlayerID = 0;
                 super.gameBoard.setPlayerName(0,"RandomAI");
                 super.gameBoard.setPlayerName(1,"opponent");
                 this.state = Game.STATE_WAIT_PLAYER_PLAY;
-            } else if(message.toUpperCase().equals("102 PLYERID 1")){
+            } else if(message.toUpperCase().equals("102 PLAYERID 1")){
                 //後手の場合
                 this.myPlayerID = 1;
                 super.gameBoard.setPlayerName(1,"RandomAI");
