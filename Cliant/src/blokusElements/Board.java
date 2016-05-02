@@ -57,10 +57,11 @@ public class Board {
      * 戻り値は接していた角の個数（設置不能時は0）
      */
     public int canPutPiece(int player,Piece piece,int x,int y){
-        if(player > 1){
+        if(player > 1 || x < 0 || y < 0 || x > BOARDSIZE || y > BOARDSIZE){
             //プレイヤー名が不正
             return 0;
         }
+        
         
         //ピースが盤面から出ないことを確認
         int[][] pieceshape = piece.getPiecePattern();

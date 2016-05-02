@@ -26,7 +26,7 @@ import network.ServerConnecter;
  * @author Admin
  */
 public class TajimaAI extends BlokusAI{
-    private static final String AINAME = "TajimaAI";
+    private static final String AINAME = "TajiamaAI";
 
     //自分自身の処理状態
     private int state;
@@ -91,7 +91,71 @@ public class TajimaAI extends BlokusAI{
                     String fullID = id+"-"+d;
                     ArrayList<Point> putlist = new ArrayList<Point>();
                     for(Point pos:list){
-                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, new Piece(id,d), pos.x,pos.y) > 0){
+                        Piece piece = new Piece(id,d);
+                        int[][] pieceshape = piece.getPiecePattern();
+                        int width = pieceshape[0].length;
+                        int height = pieceshape.length;
+                        
+                        
+                        int max;
+                        if(width > height){
+                            max = width;
+                        }else{
+                            max = height;
+                        }
+                        
+                        switch(max){
+                            case 1:
+                                break;
+                            case 2:
+                                for (int i = pos.x-1; i <= pos.x+1; i++) {
+                                    for (int j = pos.y-1; j <= pos.y+1; j++) {
+                                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, i,j) > 0){
+                                            putlist.add(new Point(i,j));
+                                        }
+                                    }
+                                    
+                                }
+                                break;
+                            case 3:
+                                for (int i = pos.x-2; i <= pos.x+2; i++) {
+                                    for (int j = pos.y-2; j <= pos.y+2; j++) {
+                                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, i,j) > 0){
+                                            putlist.add(new Point(i,j));
+                                        }
+                                    }
+                                }
+                                break;
+                            case 4:
+                                for (int i = pos.x-3; i <= pos.x+3; i++) {
+                                    for (int j = pos.y-3; j <= pos.y+3; j++) {
+                                        if(Math.abs(pos.x)+Math.abs(pos.y) > 4){
+                                            if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, i,j) > 0){
+                                                putlist.add(new Point(i,j));
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                            case 5:
+                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x-4,pos.y) > 0){
+                                    putlist.add(new Point(pos.x-4,pos.y));
+                                }
+                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x,pos.y-4) > 0){
+                                    putlist.add(new Point(pos.x,pos.y-4));
+                                }
+                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x+4,pos.y) > 0){
+                                    putlist.add(new Point(pos.x+4,pos.y));
+                                }
+                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x,pos.y+4) > 0){
+                                    putlist.add(new Point(pos.x,pos.y+4));
+                                }
+                                break;
+                            
+                        }
+
+                        //左上
+                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x,pos.y) > 0){
                             putlist.add(new Point(pos.x,pos.y));
                         }
                     }
@@ -111,7 +175,7 @@ public class TajimaAI extends BlokusAI{
         
         if(canPutList.keySet().size() > 0){
             //3と他の手
-            if(TurnCount < -1){
+            if(TurnCount < 3){
                 pdata = this.theFirstThreeChoices();
                 this.nextPutAssess(pdata);
                 TurnCount++;
@@ -120,6 +184,7 @@ public class TajimaAI extends BlokusAI{
                 pdata = this.randomSelect(canPutList);
                 
                 //ここからAI
+                
                 
                 this.nextPutAssess(pdata);
                 
@@ -181,40 +246,15 @@ public class TajimaAI extends BlokusAI{
             }
         }
         
-        /*
-        System.out.println(shadowCornerList);
-        System.out.println(nowCornerList);
-        System.out.println(AandB);
-        System.out.println(onlyA);
-        System.out.println(onlyB);
-        */
-        
-        
-        System.out.println("Turn "+this.TurnCount);
+        System.out.println("\n**************評価関数出力***************");
+        System.out.println("Turn "+this.TurnCount+1);
         System.out.println(nowCornerList);
         System.out.println("置くピース:"+Arrays.toString(pdata));
         System.out.println(shadowCornerList);
         System.out.println("手によって増える手数:"+onlyB.size());
         
+        System.out.println("***************************************\n");
         
-        System.out.println("\n");
-        /*
-        Hashmap
-        for (String Key : canPutList.keySet()){
-            for (Point Value : canPutList.get(Key)){
-                int[][] shadowBoard = this.gameBoard.getBoardState();
-                
-                
-                
-                System.out.println(Value);
-                
-            }
-            
-        }
-        */
-
-        //System.out.println("手によって減る数；");
-        //System.out.println("手によって増える数；");
         return evaluation;
     }
     
