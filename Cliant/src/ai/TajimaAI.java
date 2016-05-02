@@ -26,7 +26,7 @@ import network.ServerConnecter;
  * @author Admin
  */
 public class TajimaAI extends BlokusAI{
-    private static final String AINAME = "TajiamaAI";
+    private static final String AINAME = "TajiAI 5/2";
 
     //自分自身の処理状態
     private int state;
@@ -172,30 +172,60 @@ public class TajimaAI extends BlokusAI{
     private String SelectPutPiece(HashMap<String,ArrayList<Point>> canPutList){
         String message;
         String[] pdata = new String[4];     //ピース番号分割用  pdata[0] ピース番号-回転-X-Y　例：5A-3-1-2
+        int max = 0;
+        String[] maxpid = new String[4];
+        HashMap<String,ArrayList<Point>> canList;
         
         if(canPutList.keySet().size() > 0){
+            //評価リスト
+            HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
             //3と他の手
             if(TurnCount < 3){
                 pdata = this.theFirstThreeChoices();
                 this.nextPutAssess(pdata);
                 TurnCount++;
+                message = finishMove(pdata);
             }else{
+                /*
                 //ランダムセレクト用
                 pdata = this.randomSelect(canPutList);
+                this.nextPutAssess(pdata);
+                message = finishMove(pdata);
+                */
+                
                 
                 //ここからAI
+                canList = new HashMap<String,ArrayList<Point>>();
+                canList = this.getCanPutList();
+                for(String pid:canList.keySet()){
+                    String canPieceName[] = pid.split("-");
+                    ArrayList<String> list = new ArrayList(Arrays.asList(canPieceName));
+                    for(Point point:canList.get(pid)){
+                        int evaluation = 0;
+                        
+                        list.add(String.valueOf(point.x));
+                        list.add(String.valueOf(point.y));
+                        evaluation = nextPutAssess(list.toArray(new String[0]));
+                        evaList.put(list.toArray(new String[0]),evaluation);
+                        list.remove(list.size()-1);
+                        list.remove(list.size()-1);
+                    }
+                }
+                
+                for(String[] pid:evaList.keySet()){
+                    if(evaList.get(pid) >= max){
+                        max = evaList.get(pid);
+                        maxpid = pid;
+                    }
+                }
+                message = finishMove(maxpid);
                 
                 
-                this.nextPutAssess(pdata);
-                
+                //評価値
+                System.out.println("評価値；"+max);       
                 TurnCount++;
             }
             
-            //手の評価を表示
-
-            
-            //ターン終了の処理
-            message = finishMove(pdata);
         } else {
             //パス
             message = passMove();
@@ -214,6 +244,8 @@ public class TajimaAI extends BlokusAI{
         int y = Integer.parseInt(pdata[3]);
         int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
         int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
+        int Katen  = 0;
+        int Hatten = 0;
         int evaluation = 0;                                 //評価値
         ArrayList<Point> AandB = new ArrayList<Point>();
         ArrayList<Point> onlyA = new ArrayList<Point>();
@@ -246,14 +278,27 @@ public class TajimaAI extends BlokusAI{
             }
         }
         
+        /*
         System.out.println("\n**************評価関数出力***************");
-        System.out.println("Turn "+this.TurnCount+1);
+        System.out.println("Turn "+this.TurnCount);
         System.out.println(nowCornerList);
         System.out.println("置くピース:"+Arrays.toString(pdata));
         System.out.println(shadowCornerList);
         System.out.println("手によって増える手数:"+onlyB.size());
         
         System.out.println("***************************************\n");
+        */
+        
+        //評価値
+        //加点数
+        Katen = onlyA.size()*Integer.parseInt(pdata[0].substring(0,1));
+        Hatten = onlyB.size();
+        if(Katen >= 10){
+            evaluation = Katen;
+            evaluation += Hatten; 
+        }else{
+            evaluation = Hatten;
+        }
         
         return evaluation;
     }
