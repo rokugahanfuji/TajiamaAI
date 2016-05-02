@@ -48,67 +48,69 @@ public class BoardSub extends Board {
         for(i=0;i<BOARDSIZE;i++){
             for(j=0;j<BOARDSIZE;j++){
                 ValidCornerTroutPoint = new Point();
-                if((i-1 > -1) && (j > 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
-                    if(boardState[i][j+1] == -1 && boardState[i][j-1] == -1 && boardState[i-1][j] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i-1][j-1] == playerID || boardState[i+1][j-1] == playerID || boardState[i-1][j+1] == playerID || boardState[i+1][j+1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                if(boardState[i][j] == -1){
+                    if((i-1 > -1) && (j > 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
+                        if(boardState[i][j+1] != playerID && boardState[i][j-1] != playerID && boardState[i-1][j] != playerID && boardState[i+1][j] != playerID){
+                            if(boardState[i-1][j-1] == playerID || boardState[i+1][j-1] == playerID || boardState[i-1][j+1] == playerID || boardState[i+1][j+1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i < 1) && (j > 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
-                    if(boardState[i][j+1] == -1 && boardState[i][j-1] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i+1][j-1] == playerID || boardState[i+1][j+1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i < 1) && (j > 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
+                        if(boardState[i][j+1] != playerID && boardState[i][j-1] != playerID && boardState[i+1][j] != playerID){
+                            if(boardState[i+1][j-1] == playerID || boardState[i+1][j+1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i > 1) && (j < 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
-                    if(boardState[i][j+1] == -1 && boardState[i-1][j] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i-1][j+1] == playerID || boardState[i+1][j+1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i > 1) && (j < 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
+                        if(boardState[i][j+1] != playerID && boardState[i-1][j] != playerID && boardState[i+1][j] != playerID){
+                            if(boardState[i-1][j+1] == playerID || boardState[i+1][j+1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i > 1) && (j > 1) && (i == BOARDSIZE-1) && (j < BOARDSIZE-1)){
-                    if(boardState[i][j+1] == -1 && boardState[i][j-1] == -1 && boardState[i-1][j] == -1){
-                        if(boardState[i-1][j-1] == playerID || boardState[i-1][j+1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i > 1) && (j > 1) && (i == BOARDSIZE-1) && (j < BOARDSIZE-1)){
+                        if(boardState[i][j+1] != playerID && boardState[i][j-1] != playerID && boardState[i-1][j] != playerID){
+                            if(boardState[i-1][j-1] == playerID || boardState[i-1][j+1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i > 1) && (j > 1) && (i < BOARDSIZE-1) && (j == BOARDSIZE-1)){
-                    if(boardState[i][j-1] == -1 && boardState[i-1][j] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i-1][j-1] == playerID || boardState[i+1][j-1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i > 1) && (j > 1) && (i < BOARDSIZE-1) && (j == BOARDSIZE-1)){
+                        if(boardState[i][j-1] != playerID && boardState[i-1][j] != playerID && boardState[i+1][j] != playerID){
+                            if(boardState[i-1][j-1] == playerID || boardState[i+1][j-1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i < 1) && (j < 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
-                    if(boardState[i][j+1] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i+1][j+1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i < 1) && (j < 1) && (i < BOARDSIZE-1) && (j < BOARDSIZE-1)){
+                        if(boardState[i][j+1] != playerID && boardState[i+1][j] != playerID){
+                            if(boardState[i+1][j+1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i > 1) && (j < 1) && (i > BOARDSIZE-1) && (j < BOARDSIZE-1)){
-                    if(boardState[i][j+1] == -1 && boardState[i-1][j] == -1){
-                        if(boardState[i-1][j+1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i > 1) && (j < 1) && (i > BOARDSIZE-1) && (j < BOARDSIZE-1)){
+                        if(boardState[i][j+1] != playerID && boardState[i-1][j] != playerID){
+                            if(boardState[i-1][j+1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i > 1) && (j > 1) && (i > BOARDSIZE-1) && (j > BOARDSIZE-1)){
-                    if(boardState[i][j-1] == -1 && boardState[i-1][j] == -1){
-                        if(boardState[i-1][j-1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i > 1) && (j > 1) && (i > BOARDSIZE-1) && (j > BOARDSIZE-1)){
+                        if(boardState[i][j-1] != playerID && boardState[i-1][j] != playerID){
+                            if(boardState[i-1][j-1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
-                    }
-                }else if((i < 1) && (j > 1) && (i < BOARDSIZE-1) && (j > BOARDSIZE-1)){
-                    if(boardState[i][j-1] == -1 && boardState[i+1][j] == -1){
-                        if(boardState[i+1][j-1] == playerID){
-                            ValidCornerTroutPoint.setLocation(j, i);
-                            ValidCornerTroutList.add(ValidCornerTroutPoint);
+                    }else if((i < 1) && (j > 1) && (i < BOARDSIZE-1) && (j > BOARDSIZE-1)){
+                        if(boardState[i][j-1] != playerID && boardState[i+1][j] != playerID){
+                            if(boardState[i+1][j-1] == playerID){
+                                ValidCornerTroutPoint.setLocation(j, i);
+                                ValidCornerTroutList.add(ValidCornerTroutPoint);
+                            }
                         }
                     }
                 }
