@@ -175,4 +175,8 @@ public class Game extends Observable{
         this.timerThread.StopTimeCount(PlayerID);
     }
     
+    public void initForReflesh(){
+        this.init();
+    }
+    
 }

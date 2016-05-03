@@ -14,6 +14,8 @@ import java.util.logging.Logger;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import simpleclient.All;
+
 /**
  *
  * @author koji
@@ -35,9 +37,12 @@ public class SimpleClient {
         } catch (UnsupportedLookAndFeelException ex) {
             Logger.getLogger(SimpleClient.class.getName()).log(Level.SEVERE, null, ex);
         }
+        All all = new All();
+        
         Game myGame = new Game();
-        BlokusAI myAI = new TajimaAI(myGame);
-        ClientGUI gui = new ClientGUI(myAI);
+        BlokusAI myAI = new TajimaAI(myGame,all);
+        ClientGUI gui = new ClientGUI(myAI,all);
+        all.SetAll(myGame,myAI,gui);
         
         gui.setVisible(true);
     }

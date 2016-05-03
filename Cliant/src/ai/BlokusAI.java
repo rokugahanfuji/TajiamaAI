@@ -33,6 +33,9 @@ public abstract class BlokusAI implements MessageRecevable{
         this.isThinking = false;
     }
     
+    public void initForReflesh(Game game){
+    }
+    
     public abstract void setOutputInterface(MessageRecevable mr);
     
 }

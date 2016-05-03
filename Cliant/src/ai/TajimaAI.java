@@ -20,7 +20,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import network.ServerConnecter;
-
+import simpleclient.All;
 /**
  *
  * @author Admin
@@ -41,8 +41,10 @@ public class TajimaAI extends BlokusAI{
     //結果の出力先など
     private MessageRecevable userInterface;
     //このAIの名前
+    
+    private All All;
 
-    public TajimaAI(Game game) {
+    public TajimaAI(Game game,All all) {
         super(game);
         this.TurnCount = 0;
         this.state = Game.STATE_WAIT_PLAYER_CONNECTION;
@@ -51,11 +53,14 @@ public class TajimaAI extends BlokusAI{
         for(String pcid:Piece.PieceIDList){
             this.havingPeices.add(pcid);
         }
+        
+        this.All = all;
     }
 
     public int[][] recevedData;
     public int receveline;
     private int TurnCount;
+    private boolean Result;
     
     //メッセージ解析用の正規表現パターン
     private Pattern PLAYEDMSGPTN = Pattern.compile("401 PLAYED ([0-1]) (1?[0-9]) (1?[0-9]) ([0-5][0-9A-F])-([0-8])");
@@ -429,7 +434,31 @@ public class TajimaAI extends BlokusAI{
                 String sendmessage = SelectPutPiece(canPutList);
                 this.connecter.sendMessage(sendmessage);
                 this.userInterface.addMessage(sendmessage);
+            } else if(message.toUpperCase().equals("501 WINNER 0")){ 
+                if(this.myPlayerID == 0){
+                    this.Result = true;
+                }else{
+                    this.Result = false;
+                }
+            } else if(message.toUpperCase().equals("501 WINNER 1")){ 
+                if(this.myPlayerID == 1){
+                    this.Result = true;
+                }else{
+                    this.Result = false;
+                }
+            } else if(message.toUpperCase().equals("502 GAME END")){
+                //自動化の処理
+                if(this.All.getJidouFlag() == true && this.All.getMakeFlag() == true){
+                    //負けてて負けチェック入ってたらリフレッシュ
+                    if(this.Result == true){
+                        this.All.Reflesh();
+                    }
+                } else if(this.All.getJidouFlag() == true){
+                    //自動化処理
+                        this.All.Reflesh();
+                }
             }            
+            
         }
     }
     
@@ -458,5 +487,17 @@ public class TajimaAI extends BlokusAI{
         //throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    @Override
+    public void initForReflesh(Game game){
+        this.gameBoard = game;
+        this.TurnCount = 0;
+        this.state = Game.STATE_WAIT_PLAYER_CONNECTION;
+        this.usedPeices = new ArrayList<String>();
+        this.havingPeices = new ArrayList<String>();
+        for(String pcid:Piece.PieceIDList){
+            this.havingPeices.add(pcid);
+        }
+        
+    }
 }
 

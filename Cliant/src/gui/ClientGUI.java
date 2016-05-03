@@ -16,6 +16,8 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import network.ServerConnecter;
 
+import simpleclient.All;
+
 /**
  *
  * @author koji
@@ -29,15 +31,20 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
     //BlockusAI
     private BlokusAI myAI;
     
+    private All All;
+    private boolean JidouF = false;
+    private boolean MakeF = false;
     
     /**
      * コンストラクタ　文字の表示部分のみを初期化する
      */
-    public ClientGUI(BlokusAI ai) {
+    public ClientGUI(BlokusAI ai,All all) {
         initComponents();
         this.document = new DefaultStyledDocument();
         this.jTextPane1.setDocument(this.document);
         this.myAI = ai;
+        
+        this.All = all;
     }
 
     public ClientGUI() {
@@ -69,12 +76,18 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
         jLabel5 = new javax.swing.JLabel();
         jTextField4 = new javax.swing.JTextField();
         jButton2 = new javax.swing.JButton();
+        jJidouCheckBox = new javax.swing.JCheckBox();
+        jMakeCheckBox = new javax.swing.JCheckBox();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Blokus Client 1.00 b160411 ");
 
         jLabel1.setText("Log");
 
+        jCheckBox1.setSelected(true);
         jCheckBox1.setText("AutoMode");
         jCheckBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -126,6 +139,35 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
             }
         });
 
+        jJidouCheckBox.setText("自動");
+        jJidouCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jJidouCheckBoxActionPerformed(evt);
+            }
+        });
+
+        jMakeCheckBox.setText("負けたら止まる");
+        jMakeCheckBox.setEnabled(false);
+        jMakeCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMakeCheckBoxActionPerformed(evt);
+            }
+        });
+
+        jMenu1.setText("Game");
+
+        jMenuItem1.setText("Reflesh");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu1);
+
+        setJMenuBar(jMenuBar1);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -150,15 +192,21 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jCheckBox1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton2))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                 .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel5)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jMakeCheckBox)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(jJidouCheckBox)
+                                        .addGap(9, 9, 9)
+                                        .addComponent(jCheckBox1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jButton2)))))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -174,9 +222,12 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton2)
-                    .addComponent(jCheckBox1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 13, Short.MAX_VALUE)
-                .addComponent(jLabel2)
+                    .addComponent(jCheckBox1)
+                    .addComponent(jJidouCheckBox))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(jMakeCheckBox))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING)
@@ -250,6 +301,35 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2ActionPerformed
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // TODO add your handling code here:
+        this.All.Reflesh();
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jJidouCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jJidouCheckBoxActionPerformed
+        // TODO add your handling code here:
+        if(this.jJidouCheckBox.isSelected()){
+            this.JidouF = true;
+            this.jMakeCheckBox.setEnabled(true);
+        } else {
+            //チェックが解除された
+            this.JidouF = false;
+            this.jMakeCheckBox.setEnabled(false);
+            this.jMakeCheckBox.setSelected(false);
+            this.MakeF = false;
+        }
+    }//GEN-LAST:event_jJidouCheckBoxActionPerformed
+
+    private void jMakeCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMakeCheckBoxActionPerformed
+        // TODO add your handling code here:
+        if(this.jMakeCheckBox.isSelected()){
+            this.MakeF = true;
+        } else {
+            //チェックが解除された
+            this.MakeF = false;
+        }
+    }//GEN-LAST:event_jMakeCheckBoxActionPerformed
     
     /** 通信先にメッセージを送信する。サーバにつながっていない場合は送らない */
     public void sendMessage(String sendText){
@@ -301,16 +381,32 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
 
     }
     
+    public void RefleshText(){
+        this.jTextPane1.setText("");
+    }
+    
+    public boolean getJidouFlag(){
+        return this.JidouF;
+    }
+    
+    public boolean getMakeFlag(){
+        return this.MakeF;
+    }
  
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JCheckBox jCheckBox1;
+    private javax.swing.JCheckBox jJidouCheckBox;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JCheckBox jMakeCheckBox;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
