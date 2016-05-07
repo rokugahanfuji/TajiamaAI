@@ -14,7 +14,9 @@ import gui.MessageRecevable;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -46,7 +48,7 @@ public class TajimaAI extends BlokusAI{
 
     public TajimaAI(Game game,All all) {
         super(game);
-        this.TurnCount = 0;
+        this.TurnCount = 1;
         this.state = Game.STATE_WAIT_PLAYER_CONNECTION;
         this.usedPeices = new ArrayList<String>();
         this.havingPeices = new ArrayList<String>();
@@ -73,7 +75,7 @@ public class TajimaAI extends BlokusAI{
         list = BoardSub.ValidCornerTroutSet(this.myPlayerID,this.gameBoard.getBoardState());
         
         //最初だけ例外処理(ランダム用）
-        if(this.TurnCount == 0){
+        if(this.TurnCount == 1){
             for(String id:this.havingPeices){
                 for(int d=0;d<8;d++){
                     String fullID = id+"-"+d;
@@ -175,12 +177,10 @@ public class TajimaAI extends BlokusAI{
         
         //canPutListに含まれるものがあれば、AIで思考 0ならばパス
         if(canPutList.keySet().size() > 0){
-            //評価リスト
-            HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
             //3と他の手
-            if(TurnCount < 3){
+            if(TurnCount < 4){
                 pdata = this.theFirstThreeChoices();
-                this.nextPutAssess(pdata);
+                //this.nextPutAssess(pdata);
                 TurnCount++;
                 message = finishMove(pdata);
             }else{
@@ -193,10 +193,14 @@ public class TajimaAI extends BlokusAI{
                 */
                 
                 //ここからAI
+                //評価リスト
+                HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
                 String[] pieceMaxpid = new String[4];
-                int pieceMax = 0;
+                int pieceMaxValue = 0;
                 HashMap<String,ArrayList<Point>> canList = canList = this.getCanPutList();
-                //canPutList Key(String):XX-X Value(ArrayList<Point>):{(X,Y),(X,Y)....}
+                //canPutListの中身：Key(String):XX-X Value(ArrayList<Point>):{(X,Y),(X,Y)....}
+                
+                //canPutListを評価し、評価リストevaList(Key:(String[]) pdata[]  Value:(integer)評価値)を出力する
                 for(String pid:canList.keySet()){
                     String canPieceName[] = pid.split("-");
                     //String配列に加えたりする用のArrayList（暇があったら修正したい）
@@ -215,16 +219,24 @@ public class TajimaAI extends BlokusAI{
                     }
                 }
                 
-                //評価リストのうち、もっとも評価値が高いものを選定する、
-                for(String[] pid:evaList.keySet()){
-                    if(evaList.get(pid) >= pieceMax){
-                        pieceMax = evaList.get(pid);
-                        pieceMaxpid = pid;
+                //評価リストのうち、もっとも評価値が高いものを選定する
+                pieceMaxValue = Collections.max(evaList.values());
+                
+                //最高評価値より低い物を削除
+                for (Iterator<String[]> it = evaList.keySet().iterator(); it.hasNext();) {
+                    String[] key = it.next();
+                    if (evaList.get(key) < pieceMaxValue) {
+                        it.remove();
                     }
                 }
-                message = finishMove(pieceMaxpid);
+
+                //HashMapのKeyを1つランダムで選択する
+                pieceMaxpid = this.getRandomHashMapKey(evaList);
                 //評価値
-                System.out.println("評価値；"+pieceMax);       
+                System.out.println("Turn "+this.TurnCount+" 評価値:"+evaList.get(pieceMaxpid)+"  Piece:"+Arrays.asList(pieceMaxpid) ); 
+                this.nextPutAssessTest(pieceMaxpid);
+                
+                message = finishMove(pieceMaxpid);
                 TurnCount++;
             }
             
@@ -269,6 +281,7 @@ public class TajimaAI extends BlokusAI{
             onlyB.add(value);
         }
         
+        
         //それぞれを評価
         for(Point value:nowCornerList){
             //AandB
@@ -280,26 +293,123 @@ public class TajimaAI extends BlokusAI{
             }
         }
         
+        //消えた手数を再評価
+        for(Iterator<Point> it = onlyA.iterator(); it.hasNext();){
+            Point Apiece = it.next();
+            if(shadowBoard[Apiece.y][Apiece.x] != this.myPlayerID){
+                it.remove();
+            }
+        }
+        
         /*
         System.out.println("\n**************評価関数出力***************");
         System.out.println("Turn "+this.TurnCount);
         System.out.println(nowCornerList);
         System.out.println("置くピース:"+Arrays.toString(pdata));
         System.out.println(shadowCornerList);
-        System.out.println("手によって増える手数:"+onlyB.size());
+        System.out.println("onlyA:"+onlyA);
+        System.out.println("onlyB:"+onlyB);
+        //System.out.println("AandB:"+AandB);
+        System.out.println("消えた手数（加点）："+onlyA.size());
+        System.out.println("増える手数（発展）："+onlyB.size());
         
         System.out.println("***************************************\n");
         */
         
         //評価値
         //加点方法
-        Katen = onlyA.size()*Integer.parseInt(pdata[0].substring(0,1));
+        Katen = (onlyA.size()-1)*Integer.parseInt(pdata[0].substring(0,1));
+        //System.out.println(onlyA);
+        //System.out.println(onlyA.size());
         Hatten = onlyB.size();
-        if(Katen >= 10){
+        
+        if(Katen >= 5){
             evaluation = Katen;
             evaluation += Hatten; 
         }else{
-            evaluation = Hatten;
+           evaluation = Hatten;
+        }
+        
+        return evaluation;
+    }
+    
+    //評価関数Test
+    private int nextPutAssessTest(String[] pdata){
+        Piece piece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
+        int x = Integer.parseInt(pdata[2]);
+        int y = Integer.parseInt(pdata[3]);
+        int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
+        int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
+        int Katen  = 0;
+        int Hatten = 0;
+        int evaluation = 0;                                 //評価値
+        ArrayList<Point> AandB = new ArrayList<Point>();
+        ArrayList<Point> onlyA = new ArrayList<Point>();
+        ArrayList<Point> onlyB = new ArrayList<Point>();
+        //ディープコピー
+        for (int i = 0; i < nowBoard.length; i++) {
+            shadowBoard[i] = nowBoard[i].clone();
+        }
+        //現在と未来の角リストを作成する
+        ArrayList<Point> nowCornerList = new ArrayList<Point>();
+        ArrayList<Point> shadowCornerList = new ArrayList<Point>();
+        shadowBoard = BoardSub.putPiece(this.myPlayerID,piece,x,y,shadowBoard);
+
+        //それぞれ評価する
+        nowCornerList = BoardSub.ValidCornerTroutSet(this.myPlayerID,nowBoard);
+        shadowCornerList = BoardSub.ValidCornerTroutSet(this.myPlayerID,shadowBoard);
+        
+        for(Point value:shadowCornerList){
+            onlyB.add(value);
+        }
+        
+        
+        //それぞれを評価
+        for(Point value:nowCornerList){
+            //AandB
+            if(shadowCornerList.contains(value)){
+                AandB.add(value);
+                onlyB.remove(value);
+            }else{
+                onlyA.add(value);
+            }
+        }
+        
+        //消えた手数を再評価
+        for(Iterator<Point> it = onlyA.iterator(); it.hasNext();){
+            Point Apiece = it.next();
+            if(shadowBoard[Apiece.y][Apiece.x] != this.myPlayerID){
+                it.remove();
+            }
+        }
+        /*
+        System.out.println("\n**************評価関数出力***************");
+        System.out.println("Turn "+this.TurnCount);
+        System.out.println(nowCornerList);
+        System.out.println("置くピース:"+Arrays.toString(pdata));
+        System.out.println(shadowCornerList);
+        System.out.println("onlyA:"+onlyA);
+        System.out.println("onlyB:"+onlyB);
+        //System.out.println("AandB:"+AandB);
+        System.out.println("消えた手数（加点）："+onlyA.size());
+        System.out.println("増える手数（発展）："+onlyB.size());
+        
+        System.out.println("***************************************\n");
+        */
+        
+        
+        //評価値
+        //加点方法
+        Katen = (onlyA.size()-1)*Integer.parseInt(pdata[0].substring(0,1));
+        //System.out.println(onlyA);
+        //System.out.println(onlyA.size());
+        Hatten = onlyB.size();
+        
+        if(Katen >= 0){
+            evaluation = Katen;
+            //evaluation += Hatten; 
+        }else{
+            //evaluation = Hatten;
         }
         
         return evaluation;
@@ -337,6 +447,17 @@ public class TajimaAI extends BlokusAI{
         return (String[]) list.toArray(new String[0]);
     }
     
+    //HashMapの中のランダムなキーを返却する
+    private String[] getRandomHashMapKey(HashMap<String[],Integer> evaList){
+        ArrayList<String[]> ranList = new ArrayList<String[]>();
+        for(String[] pid:evaList.keySet()){
+            ranList.add(pid);
+        }
+        
+        Collections.shuffle(ranList);
+        return ranList.get(0);
+    }
+    
     //終了処理
     private String finishMove(String[] pdata){
         String pid = pdata[0] + "-" + pdata[1];
@@ -364,21 +485,21 @@ public class TajimaAI extends BlokusAI{
     private String[] theFirstThreeChoices(){
         String[] pdata = new String[4];
             switch(TurnCount){
-                case 0:
+                case 1:
                     if(this.myPlayerID == 0){
                         pdata = "5A-1-0-0".split("-");
                     } else {
                         pdata = "5A-4-12-12".split("-");
                     }
                     break;
-                case 1:
+                case 2:
                     if(this.myPlayerID == 0){
                         pdata = "5B-0-2-2".split("-");
                     } else {
                         pdata = "5B-0-10-10".split("-");
                     }
                     break;
-                case 2:
+                case 3:
                     if(this.myPlayerID == 0){
                         pdata = "57-0-4-4".split("-");
                     } else {
@@ -490,7 +611,7 @@ public class TajimaAI extends BlokusAI{
     @Override
     public void initForReflesh(Game game){
         this.gameBoard = game;
-        this.TurnCount = 0;
+        this.TurnCount = 1;
         this.state = Game.STATE_WAIT_PLAYER_CONNECTION;
         this.usedPeices = new ArrayList<String>();
         this.havingPeices = new ArrayList<String>();
