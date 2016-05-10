@@ -4,20 +4,17 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/ai/TajimaAI.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/blokusElements/TimerThread.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/network/ServerConnecter.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/simpleclient/All.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/ai/RandomSelectAI.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/blokusElements/Game.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/simpleclient/SimpleClient.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/gui/ClientGUI.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/blokusElements/PiecePattern.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/gui/MessageRecevable.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/blokusElements/Board.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/ai/BlokusAI.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/blokusElements/Piece.java</file>
-            <file>file:/J:/My%20Documents/GitHub/TajiamaAI/Cliant/src/blokusElements/BoardSub.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/blokusElements/BoardSub.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/ai/TajimaAI.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/ai/RandomSelectAI.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/blokusElements/Board.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/blokusElements/PiecePattern.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/blokusElements/Game.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/gui/ClientGUI.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/gui/MessageRecevable.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/blokusElements/Piece.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/ai/BlokusAI.java</file>
+            <file>file:/Users/fujisawa/Desktop/Work/Blokus%20AI/Cliant/src/blokusElements/TimerThread.java</file>
         </group>
     </open-files>
 </project-private>

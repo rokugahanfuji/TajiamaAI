@@ -68,11 +68,34 @@ public class TajimaAI extends BlokusAI{
     private Pattern PLAYEDMSGPTN = Pattern.compile("401 PLAYED ([0-1]) (1?[0-9]) (1?[0-9]) ([0-5][0-9A-F])-([0-8])");
     private Pattern PASSEDMSGPTN = Pattern.compile("402 PASSED ([0-1])");
 
-    /** 配置可能なピースのIDとその場所の一覧を取得する */
+    /**** 主要な変数
+    * String[] pieceDataAndPoint
+    * ピースの情報と、その打つ場所を持った配列
+    * [0] ピース番号     例:5A
+    * [1] ピースの回転角  例:4
+    * [2] 打つX座標      例:4
+    * [3] 打つY座標      例:5
+    * 例では、5A-4のピースを、(4,5)に打つ手を示す。
+     
+    * String pidPoint
+    * pieceDataAndPointの配列を、"-"で繋いだ文字列
+    * 例:5A-4-3-5
+    
+    * String[]pdata,String pid ---> [0][1]のみcanPutListで使用
+    
+    * HashMap<String,ArrayList<Point>> canPutList 
+    * <pid,打てる座標のPoint型のリスト>
+    * 例 Key  :5A-3
+    *   Value:{(1,3),(4,5),(2,5),(2,7)}
+    * 
+    *****/
+
+    /** 配置可能なピースのIDとその場所の一覧を取得する
+     * 返り値:HashMap<String,ArrayList<Point>> <置くピース,置ける点のリスト> canPutList
+     */
     private HashMap<String,ArrayList<Point>> getCanPutList(){
         HashMap<String,ArrayList<Point>> canPutList = new HashMap<String,ArrayList<Point>>();
-        ArrayList<Point> list = new ArrayList<Point>();
-        list = BoardSub.ValidCornerTroutSet(this.myPlayerID,this.gameBoard.getBoardState());
+        ArrayList<Point> list = BoardSub.ValidCornerTroutSet(this.myPlayerID,this.gameBoard.getBoardState());
         
         //最初だけ例外処理(ランダム用）
         if(this.TurnCount == 1){
@@ -170,50 +193,49 @@ public class TajimaAI extends BlokusAI{
         return canPutList;
     }
     
-    /** ピースの配置を考えるメソッド */
+    /** ピースの配置を考えるメソッド
+     * 引数1:HashMap<String,ArrayList<Point>> <置くピース,置ける点のリスト> canPutList
+     * 返り値:String 置くピース
+     */
     private String SelectPutPiece(HashMap<String,ArrayList<Point>> canPutList){
         String message;
-        String[] pdata = new String[4];     //ピース番号分割用  pdata[0] ピース番号-回転-X-Y　例：5A-3-1-2
+        String[] pieceDataAndPoint;     //ピース番号分割用  pieceDataAndPoint[0] ピース番号-回転-X-Y　例：5A-3-1-2
         
         //canPutListに含まれるものがあれば、AIで思考 0ならばパス
         if(canPutList.keySet().size() > 0){
             //3と他の手
             if(TurnCount < 4){
-                pdata = this.theFirstThreeChoices();
-                //this.nextPutAssess(pdata);
+                pieceDataAndPoint = this.theFirstThreeChoices();
+                //this.nextPutAssess(pieceDataAndPoint);
                 TurnCount++;
-                message = finishMove(pdata);
+                message = finishMove(pieceDataAndPoint);
             }else{
                 //3手以降の手を選択する。
                 /*
                 //ランダムセレクト用
-                pdata = this.randomSelect(canPutList);
-                this.nextPutAssess(pdata);
-                message = finishMove(pdata);
+                pieceDataAndPoint = this.randomSelect(canPutList);
+                this.nextPutAssess(pieceDataAndPoint);
+                message = finishMove(pieceDataAndPoint);
                 */
                 
                 //ここからAI
                 //評価リスト
                 HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
-                String[] pieceMaxpid = new String[4];
-                int pieceMaxValue = 0;
-                HashMap<String,ArrayList<Point>> canList = canList = this.getCanPutList();
-                //canPutListの中身：Key(String):XX-X Value(ArrayList<Point>):{(X,Y),(X,Y)....}
+                String[] pieceMaxpid;
+                int pieceMaxValue;
+                HashMap<String,ArrayList<Point>> canList = this.getCanPutList();
                 
-                //canPutListを評価し、評価リストevaList(Key:(String[]) pdata[]  Value:(integer)評価値)を出力する
+                //canPutListを評価し、評価リストevaList(Key:(String[]) pieceDataAndPoint  Value:(integer)評価値)を出力する
                 for(String pid:canList.keySet()){
                     String canPieceName[] = pid.split("-");
-                    //String配列に加えたりする用のArrayList（暇があったら修正したい）
+                    //String配列に加えたりする用のArrayList
                     ArrayList<String> list = new ArrayList(Arrays.asList(canPieceName));
                     for(Point point:canList.get(pid)){
-                        //評価値
-                        int evaluation = 0;
                         //リストにx,y座標を代入して評価、x,yを消去して再び評価を繰り返す
                         list.add(String.valueOf(point.x));
                         list.add(String.valueOf(point.y));
-                        //評価をし、評価済みリストに代入
-                        evaluation = nextPutAssess(list.toArray(new String[0]));
-                        evaList.put(list.toArray(new String[0]),evaluation);
+                        //評価をし、評価リストに代入
+                        evaList.put(list.toArray(new String[0]),nextPutAssess(list.toArray(new String[0])));
                         list.remove(list.size()-1);
                         list.remove(list.size()-1);
                     }
@@ -232,9 +254,10 @@ public class TajimaAI extends BlokusAI{
 
                 //HashMapのKeyを1つランダムで選択する
                 pieceMaxpid = this.getRandomHashMapKey(evaList);
+                
                 //評価値
                 System.out.println("Turn "+this.TurnCount+" 評価値:"+evaList.get(pieceMaxpid)+"  Piece:"+Arrays.asList(pieceMaxpid) ); 
-                this.nextPutAssessTest(pieceMaxpid);
+                System.out.println(this.havingPeices);
                 
                 message = finishMove(pieceMaxpid);
                 TurnCount++;
@@ -247,20 +270,19 @@ public class TajimaAI extends BlokusAI{
         return message;
     }
     
-    
-    //本来はcanputLISTが、自身の評価、nowCornerListになる。
-    
-    
-    //評価関数
-    private int nextPutAssess(String[] pdata){
-        Piece piece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
-        int x = Integer.parseInt(pdata[2]);
-        int y = Integer.parseInt(pdata[3]);
+    /** 評価関数 この関数で、手の評価を行う
+     * 引数1:String[] pieceDataAndPoint
+     * 返り値:int 評価値
+     */
+    private int nextPutAssess(String[] pieceDataAndPoint){
+        Piece piece = new Piece(pieceDataAndPoint[0],Integer.parseInt(pieceDataAndPoint[1]));
+        int x = Integer.parseInt(pieceDataAndPoint[2]);
+        int y = Integer.parseInt(pieceDataAndPoint[3]);
         int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
         int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
-        int Katen  = 0;
-        int Hatten = 0;
-        int evaluation = 0;                                 //評価値
+        int Katen;
+        int Hatten;
+        int evaluation;                                 //評価値
         ArrayList<Point> AandB = new ArrayList<Point>();
         ArrayList<Point> onlyA = new ArrayList<Point>();
         ArrayList<Point> onlyB = new ArrayList<Point>();
@@ -269,8 +291,8 @@ public class TajimaAI extends BlokusAI{
             shadowBoard[i] = nowBoard[i].clone();
         }
         //現在と未来の角リストを作成する
-        ArrayList<Point> nowCornerList = new ArrayList<Point>();
-        ArrayList<Point> shadowCornerList = new ArrayList<Point>();
+        ArrayList<Point> nowCornerList;
+        ArrayList<Point> shadowCornerList;
         shadowBoard = BoardSub.putPiece(this.myPlayerID,piece,x,y,shadowBoard);
 
         //それぞれ評価する
@@ -280,7 +302,6 @@ public class TajimaAI extends BlokusAI{
         for(Point value:shadowCornerList){
             onlyB.add(value);
         }
-        
         
         //それぞれを評価
         for(Point value:nowCornerList){
@@ -292,6 +313,7 @@ public class TajimaAI extends BlokusAI{
                 onlyA.add(value);
             }
         }
+        
         
         //消えた手数を再評価
         for(Iterator<Point> it = onlyA.iterator(); it.hasNext();){
@@ -305,7 +327,7 @@ public class TajimaAI extends BlokusAI{
         System.out.println("\n**************評価関数出力***************");
         System.out.println("Turn "+this.TurnCount);
         System.out.println(nowCornerList);
-        System.out.println("置くピース:"+Arrays.toString(pdata));
+        System.out.println("置くピース:"+Arrays.toString(pieceDataAndPoint));
         System.out.println(shadowCornerList);
         System.out.println("onlyA:"+onlyA);
         System.out.println("onlyB:"+onlyB);
@@ -318,7 +340,7 @@ public class TajimaAI extends BlokusAI{
         
         //評価値
         //加点方法
-        Katen = (onlyA.size()-1)*Integer.parseInt(pdata[0].substring(0,1));
+        Katen = (onlyA.size()-1)*Integer.parseInt(pieceDataAndPoint[0].substring(0,1));
         //System.out.println(onlyA);
         //System.out.println(onlyA.size());
         Hatten = onlyB.size();
@@ -333,105 +355,25 @@ public class TajimaAI extends BlokusAI{
         return evaluation;
     }
     
-    //評価関数Test
-    private int nextPutAssessTest(String[] pdata){
-        Piece piece = new Piece(pdata[0],Integer.parseInt(pdata[1]));
-        int x = Integer.parseInt(pdata[2]);
-        int y = Integer.parseInt(pdata[3]);
-        int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
-        int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
-        int Katen  = 0;
-        int Hatten = 0;
-        int evaluation = 0;                                 //評価値
-        ArrayList<Point> AandB = new ArrayList<Point>();
-        ArrayList<Point> onlyA = new ArrayList<Point>();
-        ArrayList<Point> onlyB = new ArrayList<Point>();
-        //ディープコピー
-        for (int i = 0; i < nowBoard.length; i++) {
-            shadowBoard[i] = nowBoard[i].clone();
-        }
-        //現在と未来の角リストを作成する
-        ArrayList<Point> nowCornerList = new ArrayList<Point>();
-        ArrayList<Point> shadowCornerList = new ArrayList<Point>();
-        shadowBoard = BoardSub.putPiece(this.myPlayerID,piece,x,y,shadowBoard);
-
-        //それぞれ評価する
-        nowCornerList = BoardSub.ValidCornerTroutSet(this.myPlayerID,nowBoard);
-        shadowCornerList = BoardSub.ValidCornerTroutSet(this.myPlayerID,shadowBoard);
-        
-        for(Point value:shadowCornerList){
-            onlyB.add(value);
-        }
-        
-        
-        //それぞれを評価
-        for(Point value:nowCornerList){
-            //AandB
-            if(shadowCornerList.contains(value)){
-                AandB.add(value);
-                onlyB.remove(value);
-            }else{
-                onlyA.add(value);
-            }
-        }
-        
-        //消えた手数を再評価
-        for(Iterator<Point> it = onlyA.iterator(); it.hasNext();){
-            Point Apiece = it.next();
-            if(shadowBoard[Apiece.y][Apiece.x] != this.myPlayerID){
-                it.remove();
-            }
-        }
-        /*
-        System.out.println("\n**************評価関数出力***************");
-        System.out.println("Turn "+this.TurnCount);
-        System.out.println(nowCornerList);
-        System.out.println("置くピース:"+Arrays.toString(pdata));
-        System.out.println(shadowCornerList);
-        System.out.println("onlyA:"+onlyA);
-        System.out.println("onlyB:"+onlyB);
-        //System.out.println("AandB:"+AandB);
-        System.out.println("消えた手数（加点）："+onlyA.size());
-        System.out.println("増える手数（発展）："+onlyB.size());
-        
-        System.out.println("***************************************\n");
-        */
-        
-        
-        //評価値
-        //加点方法
-        Katen = (onlyA.size()-1)*Integer.parseInt(pdata[0].substring(0,1));
-        //System.out.println(onlyA);
-        //System.out.println(onlyA.size());
-        Hatten = onlyB.size();
-        
-        if(Katen >= 0){
-            evaluation = Katen;
-            //evaluation += Hatten; 
-        }else{
-            //evaluation = Hatten;
-        }
-        
-        return evaluation;
-    }
-    
-    //ランダム処理
+    /** 手をランダムに打つ関数
+     * 引数1:HashMap<String,ArrayList<Point>> <置くピース,置ける点のリスト> canPutList
+     * 返り値:String[] pieceDataAndPoint
+     */
     private String[] randomSelect(HashMap<String,ArrayList<Point>> canPutList){
         String pid;
         String[] pdata;
-        pdata = new String[4];
         String[] ids;
         Piece putPiece;
-        Point putPlace = new Point();
+        Point putPlace;
         ArrayList<Point> points;
         
         //canPutList -> Key:57-2 Value:Array(ピースが置ける位置)
         //rd  -> random
         //ids -> canPutListキーを配列
         //pid -> ピースID 例；"57-2" （初期ではランダム）
-        //pdata[0] -> "57" ピース形 
-        //pdata[1] -> "2"  回転  
-        //putPiece  pdataをもとに作成したPiece型
+        //pieceDataAndPoint[0] -> "57" ピース形 
+        //pieceDataAndPoint[1] -> "2"  回転  
+        //putPiece  pieceDataAndPointをもとに作成したPiece型
         //points -> pidをもとにcanPutList
         Random rd = new Random(System.currentTimeMillis());
         ids = canPutList.keySet().toArray(new String[0]);
@@ -447,7 +389,11 @@ public class TajimaAI extends BlokusAI{
         return (String[]) list.toArray(new String[0]);
     }
     
-    //HashMapの中のランダムなキーを返却する
+    /** HashMapのランダムなキーを取得する
+     * ピースの評価値が同じ時、ランダムで選択する関数
+     * 引数1:HashMap<String[],Integer> <置くピース,評価値> 
+     * 返り値:int 評価値
+     */
     private String[] getRandomHashMapKey(HashMap<String[],Integer> evaList){
         ArrayList<String[]> ranList = new ArrayList<String[]>();
         for(String[] pid:evaList.keySet()){
@@ -458,22 +404,25 @@ public class TajimaAI extends BlokusAI{
         return ranList.get(0);
     }
     
-    //終了処理
-    private String finishMove(String[] pdata){
-        String pid = pdata[0] + "-" + pdata[1];
-        Point putPlace = new Point(Integer.parseInt(pdata[2]), Integer.parseInt(pdata[3]));
-        Piece putPiece = new Piece(pdata[0],Integer.parseInt(pdata[1]));   //Piece型
+    /** ターン終了処理
+     * 引数1:String[] pieceDataAndPoint[]
+     * 返り値:String メッセージ 
+     */
+    private String finishMove(String[] pieceDataAndPoint){
+        String pid = pieceDataAndPoint[0] + "-" + pieceDataAndPoint[1];
+        Point putPlace = new Point(Integer.parseInt(pieceDataAndPoint[2]), Integer.parseInt(pieceDataAndPoint[3]));
+        Piece putPiece = new Piece(pieceDataAndPoint[0],Integer.parseInt(pieceDataAndPoint[1]));   //Piece型
 
         //自分のデータを更新し、サーバにもデータを送る
         this.gameBoard.play(this.myPlayerID, putPiece, putPlace.x, putPlace.y);
-        this.usedPeices.add(pdata[0]);
-        this.havingPeices.remove(pdata[0]);
+        this.usedPeices.add(pieceDataAndPoint[0]);
+        this.havingPeices.remove(pieceDataAndPoint[0]);
         String message = "405 PLAY "+putPlace.x+" "+putPlace.y+" "+pid;
         
         return message;
     }
     
-    //パス処理
+    /** ターン終了（パス）処理 **/
     private String passMove(){
         this.gameBoard.pass(this.myPlayerID);
         String message = "406 PASS";
@@ -481,33 +430,33 @@ public class TajimaAI extends BlokusAI{
         return message;
     }
     
-    //3手返却用
+    /** 決め打ち用の関数 **/
     private String[] theFirstThreeChoices(){
-        String[] pdata = new String[4];
+        String[] pieceDataAndPoint = new String[4];
             switch(TurnCount){
                 case 1:
                     if(this.myPlayerID == 0){
-                        pdata = "5A-1-0-0".split("-");
+                        pieceDataAndPoint = "5A-1-0-0".split("-");
                     } else {
-                        pdata = "5A-4-12-12".split("-");
+                        pieceDataAndPoint = "5A-4-12-12".split("-");
                     }
                     break;
                 case 2:
                     if(this.myPlayerID == 0){
-                        pdata = "5B-0-2-2".split("-");
+                        pieceDataAndPoint = "5B-0-2-2".split("-");
                     } else {
-                        pdata = "5B-0-10-10".split("-");
+                        pieceDataAndPoint = "5B-0-10-10".split("-");
                     }
                     break;
                 case 3:
                     if(this.myPlayerID == 0){
-                        pdata = "57-0-4-4".split("-");
+                        pieceDataAndPoint = "57-0-4-4".split("-");
                     } else {
-                        pdata = "57-2-8-8".split("-");
+                        pieceDataAndPoint = "57-2-8-8".split("-");
                     }
                     break;      
             }
-            return pdata;
+            return pieceDataAndPoint;
     }
 
     /** このプログラムがサーバからメッセージを受信すると呼び出される */
