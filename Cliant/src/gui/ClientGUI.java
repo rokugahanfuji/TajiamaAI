@@ -118,7 +118,7 @@ public class ClientGUI extends javax.swing.JFrame implements MessageRecevable {
         jLabel3.setText("Connect");
 
         jTextField2.setHorizontalAlignment(javax.swing.JTextField.RIGHT);
-        jTextField2.setText("192.168.0.21");
+        jTextField2.setText("192.168.0.16");
         jTextField2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jTextField2ActionPerformed(evt);

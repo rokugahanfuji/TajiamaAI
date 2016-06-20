@@ -136,6 +136,7 @@ public class TajimaAI extends BlokusAI{
                         //ピースの長さ分だけ、必要な探索を行う。
                         switch(pieceMax){
                             case 1:
+                                putlist.add(new Point(pos.x,pos.y));
                                 break;
                             case 2:
                                 for (int i = pos.x-1; i <= pos.x+1; i++) {
@@ -235,7 +236,9 @@ public class TajimaAI extends BlokusAI{
                         list.add(String.valueOf(point.x));
                         list.add(String.valueOf(point.y));
                         //評価をし、評価リストに代入
-                        evaList.put(list.toArray(new String[0]),nextPutAssess(list.toArray(new String[0])));
+                        PhaseShift();
+                        System.out.println(this.gameBoard.getScore()[1]);
+                        evaList.put(list.toArray(new String[0]),ValidAdjacentAssess(list.toArray(new String[0])));
                         list.remove(list.size()-1);
                         list.remove(list.size()-1);
                     }
@@ -256,8 +259,8 @@ public class TajimaAI extends BlokusAI{
                 pieceMaxpid = this.getRandomHashMapKey(evaList);
                 
                 //評価値
-                System.out.println("Turn "+this.TurnCount+" 評価値:"+evaList.get(pieceMaxpid)+"  Piece:"+Arrays.asList(pieceMaxpid) ); 
-                System.out.println(this.havingPeices);
+                //System.out.println("Turn "+this.TurnCount+" 評価値:"+evaList.get(pieceMaxpid)+"  Piece:"+Arrays.asList(pieceMaxpid) ); 
+                //System.out.println(this.havingPeices);
                 
                 message = finishMove(pieceMaxpid);
                 TurnCount++;
@@ -270,6 +273,34 @@ public class TajimaAI extends BlokusAI{
         return message;
     }
     
+    private int PhaseShift(){
+
+        return 1;
+    }    
+        
+    private int ValidAdjacentAssess(String[] pieceDataAndPoint){
+        Piece piece = new Piece(pieceDataAndPoint[0],Integer.parseInt(pieceDataAndPoint[1]));
+        int x = Integer.parseInt(pieceDataAndPoint[2]);
+        int y = Integer.parseInt(pieceDataAndPoint[3]);
+        int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
+        int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
+        
+        //ディープコピー
+        for (int i = 0; i < nowBoard.length; i++) {
+            shadowBoard[i] = nowBoard[i].clone();
+        }
+
+        shadowBoard = BoardSub.putPiece(this.myPlayerID,piece,x,y,shadowBoard);
+        
+        ArrayList<Point> newPieceList = new ArrayList<Point>();
+        for(int Py = 0;Py < BoardSub.BOARDSIZE;Py++){
+            for(int Px = 0;Px < BoardSub.BOARDSIZE;Px++){
+                if(nowBoard[Py][Px] != shadowBoard[Py][Px]) newPieceList.add(new Point(Px,Py));
+            }
+        }
+        
+        return BoardSub.ValidAdjacentSet(this.myPlayerID, nowBoard, newPieceList);
+    }
     /** 評価関数 この関数で、手の評価を行う
      * 引数1:String[] pieceDataAndPoint
      * 返り値:int 評価値

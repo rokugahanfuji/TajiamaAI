@@ -40,6 +40,49 @@ public class BoardSub extends Board {
         return exBoard;
     }
     
+    public static int ValidAdjacentSet(int playerID,int [][] boardState,ArrayList<Point> newPiecePoint){
+        int count = 0;
+        int enemyID = 1;
+        if(playerID == 2)enemyID = 0;
+        for(Point VC: newPiecePoint){
+            if(VC.y == 0 && 0 < VC.x && VC.x < BOARDSIZE-1){
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+                if(boardState[VC.y][VC.x+1] == enemyID)count++;
+                if(boardState[VC.y+1][VC.x] == enemyID)count++;
+            }else if(0 < VC.y && VC.y < BOARDSIZE-1 && VC.x == 0){
+                if(boardState[VC.y-1][VC.x] == enemyID)count++;
+                if(boardState[VC.y][VC.x+1] == enemyID)count++;
+                if(boardState[VC.y+1][VC.x] == enemyID)count++;
+            }else if(VC.y == BOARDSIZE-1 && 0 < VC.x && VC.x < BOARDSIZE-1){
+                if(boardState[VC.y-1][VC.x] == enemyID)count++;
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+                if(boardState[VC.y][VC.x+1] == enemyID)count++;
+            }else if(0 < VC.y && VC.y < BOARDSIZE-1 && VC.x == BOARDSIZE-1){
+                if(boardState[VC.y-1][VC.x] == enemyID)count++;
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+                if(boardState[VC.y+1][VC.x] == enemyID)count++;
+            }else if(VC.y == 0 && VC.x == 0){
+                if(boardState[VC.y][VC.x+1] == enemyID)count++;
+                if(boardState[VC.y+1][VC.x] == enemyID)count++;
+            }else if(VC.y == 0 && VC.x == BOARDSIZE-1){
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+                if(boardState[VC.y+1][VC.x] == enemyID)count++;
+            }else if(VC.y == BOARDSIZE-1 && VC.x == 0){
+                if(boardState[VC.y-1][VC.x] == enemyID)count++;
+                if(boardState[VC.y][VC.x+1] == enemyID)count++;
+            }else if(VC.y == BOARDSIZE-1 && VC.x == BOARDSIZE-1){
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+            }else{
+                if(boardState[VC.y-1][VC.x] == enemyID)count++;
+                if(boardState[VC.y][VC.x-1] == enemyID)count++;
+                if(boardState[VC.y][VC.x+1] == enemyID)count++;
+                if(boardState[VC.y+1][VC.x] == enemyID)count++;
+            }
+        }
+        return count;
+    }
+    
     //playerIDに対応した、有効な角リストをArrayList<Point>で返却
     public static ArrayList<Point> ValidCornerTroutSet(int playerID,int[][] boardState){
         int i,j; 

@@ -75,6 +75,7 @@ public class Game extends Observable{
             if(putPiece > 0){
                 int point = piece.getPieceCount() * putPiece;
                 this.Score[player] += point;
+                //System.out.println(this.Score[1]);
                 this.changePlayer();
                 this.setChanged();
                 this.notifyObservers(this);
