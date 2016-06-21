@@ -15,10 +15,15 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import network.ServerConnecter;
@@ -36,14 +41,24 @@ public class TajimaAI extends BlokusAI{
     private ServerConnecter connecter;
     //自分に割り当てられたID（接続前は-1）
     private int myPlayerID = -1;
+    private int enemyPlayerID = -1;
     //自分が利用したピース一覧
     private ArrayList<String> usedPeices;
+    private ArrayList<String> enemyusedPeices;
     //自分がまだ使えるピース一覧
     private ArrayList<String> havingPeices;
+    private ArrayList<String> enemyhavingPeices;
     //結果の出力先など
     private MessageRecevable userInterface;
-    //このAIの名前
     
+    //打ちたい手のEntry型ArrayList
+    private ArrayList<Entry<Integer,ArrayList<String[]>>> evaluationArrayListPlayer = new ArrayList<Entry<Integer,ArrayList<String[]>>>();
+    private ArrayList<Entry<Integer,ArrayList<String[]>>> evaluationArrayListEnemy = new ArrayList<Entry<Integer,ArrayList<String[]>>>();
+    
+    //private HashMap<String[],Integer> evaluationHashMapEnemy = new HashMap<String[],Integer>();
+    private HashMap<Integer,ArrayList<String[]>> evaluationHashMapPlayer = new HashMap<Integer,ArrayList<String[]>>();
+    private HashMap<Integer,ArrayList<String[]>> evaluationHashMapEnemy = new HashMap<Integer,ArrayList<String[]>>();
+
     private All All;
 
     public TajimaAI(Game game,All all) {
@@ -52,8 +67,11 @@ public class TajimaAI extends BlokusAI{
         this.state = Game.STATE_WAIT_PLAYER_CONNECTION;
         this.usedPeices = new ArrayList<String>();
         this.havingPeices = new ArrayList<String>();
+        this.enemyusedPeices = new ArrayList<String>();
+        this.enemyhavingPeices = new ArrayList<String>();
         for(String pcid:Piece.PieceIDList){
             this.havingPeices.add(pcid);
+            this.enemyhavingPeices.add(pcid);
         }
         
         this.All = all;
@@ -93,66 +111,65 @@ public class TajimaAI extends BlokusAI{
     /** 配置可能なピースのIDとその場所の一覧を取得する
      * 返り値:HashMap<String,ArrayList<Point>> <置くピース,置ける点のリスト> canPutList
      */
-    private HashMap<String,ArrayList<Point>> getCanPutList(){
-        HashMap<String,ArrayList<Point>> canPutList = new HashMap<String,ArrayList<Point>>();
-        ArrayList<Point> list = BoardSub.ValidCornerTroutSet(this.myPlayerID,this.gameBoard.getBoardState());
+    private HashMap<String,ArrayList<Point>> getCanPutList(int PlayerID){
+        HashMap<String,ArrayList<Point>> canPutPointHashMap = new HashMap<String,ArrayList<Point>>();
+        ArrayList<Point> validCornerPointArrayList = BoardSub.ValidCornerTroutSet(PlayerID,this.gameBoard.getBoardState());
         
         //最初だけ例外処理(ランダム用）
         if(this.TurnCount == 1){
-            for(String id:this.havingPeices){
-                for(int d=0;d<8;d++){
-                    String fullID = id+"-"+d;
-                    ArrayList<Point> putlist = new ArrayList<Point>();
+            for(String pieceId:this.havingPeices){
+                for(int pieceAngle=0;pieceAngle<8;pieceAngle++){
+                    String pieceIdFull = pieceId+"-"+pieceAngle;
+                    ArrayList<Point> putPointArrayList = new ArrayList<Point>();
                     for(int x=0;x<Board.BOARDSIZE;x++){
                         for(int y=0;y<Board.BOARDSIZE;y++){
-                            if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, new Piece(id,d), x, y) > 0){
-                                putlist.add(new Point(x,y));
+                            if(this.gameBoard.getBoard().canPutPiece(PlayerID, new Piece(pieceId,pieceAngle), x, y) > 0){
+                                putPointArrayList.add(new Point(x,y));
                             }
                         }
                     }
-                    if(putlist.size() > 0){
-                        canPutList.put(fullID, putlist);
+                    if(putPointArrayList.size() > 0){
+                        canPutPointHashMap.put(pieceIdFull, putPointArrayList);
                     }
                 }
             }
         }else{
         //角リストをもとに、canPutListを生成する。
-            for(String id:this.havingPeices){
-                for (int d = 0; d < 8; d++) {
-                    String fullID = id+"-"+d;
-                    ArrayList<Point> putlist = new ArrayList<Point>();
-                    for(Point pos:list){
-                        Piece piece = new Piece(id,d);
-                        int[][] pieceshape = piece.getPiecePattern();
-                        int width = pieceshape[0].length;
-                        int height = pieceshape.length;
-                        int pieceMax = 0;
+            for(String pieceId:this.havingPeices){
+                for (int pieceAngle = 0; pieceAngle < 8; pieceAngle++) {
+                    String pieceIdFull = pieceId+"-"+pieceAngle;
+                    ArrayList<Point> putPointArrayList = new ArrayList<Point>();
+                    for(Point pos:validCornerPointArrayList){
+                        Piece piece = new Piece(pieceId,pieceAngle);
+                        int[][] pieceShape = piece.getPiecePattern();
+                        int pieceWidth = pieceShape[0].length;
+                        int pieceHeight = pieceShape.length;
+                        int pieceLength = 0;
                         //ピースの長さが長い方を基準とする。
-                        if(width > height){
-                            pieceMax = width;
+                        if(pieceWidth > pieceHeight){
+                            pieceLength = pieceWidth;
                         }else{
-                            pieceMax = height;
+                            pieceLength = pieceHeight;
                         }
                         //ピースの長さ分だけ、必要な探索を行う。
-                        switch(pieceMax){
+                        switch(pieceLength){
                             case 1:
-                                putlist.add(new Point(pos.x,pos.y));
+                                putPointArrayList.add(new Point(pos.x,pos.y));
                                 break;
                             case 2:
                                 for (int i = pos.x-1; i <= pos.x+1; i++) {
                                     for (int j = pos.y-1; j <= pos.y+1; j++) {
-                                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, i,j) > 0){
-                                            putlist.add(new Point(i,j));
+                                        if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, i,j) > 0){
+                                            putPointArrayList.add(new Point(i,j));
                                         }
-                                    }
-                                    
+                                    } 
                                 }
                                 break;
                             case 3:
                                 for (int i = pos.x-2; i <= pos.x+2; i++) {
                                     for (int j = pos.y-2; j <= pos.y+2; j++) {
-                                        if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, i,j) > 0){
-                                            putlist.add(new Point(i,j));
+                                        if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, i,j) > 0){
+                                            putPointArrayList.add(new Point(i,j));
                                         }
                                     }
                                 }
@@ -161,55 +178,54 @@ public class TajimaAI extends BlokusAI{
                                 for (int i = pos.x-3; i <= pos.x+3; i++) {
                                     for (int j = pos.y-3; j <= pos.y+3; j++) {
                                         if(Math.abs(pos.x)+Math.abs(pos.y) > 4){
-                                            if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, i,j) > 0){
-                                                putlist.add(new Point(i,j));
+                                            if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, i,j) > 0){
+                                                putPointArrayList.add(new Point(i,j));
                                             }
                                         }
                                     }
                                 }
                                 break;
                             case 5:
-                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x-4,pos.y) > 0){
-                                    putlist.add(new Point(pos.x-4,pos.y));
+                                if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, pos.x-4,pos.y) > 0){
+                                    putPointArrayList.add(new Point(pos.x-4,pos.y));
                                 }
-                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x,pos.y-4) > 0){
-                                    putlist.add(new Point(pos.x,pos.y-4));
+                                if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, pos.x,pos.y-4) > 0){
+                                    putPointArrayList.add(new Point(pos.x,pos.y-4));
                                 }
-                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x+4,pos.y) > 0){
-                                    putlist.add(new Point(pos.x+4,pos.y));
+                                if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, pos.x+4,pos.y) > 0){
+                                    putPointArrayList.add(new Point(pos.x+4,pos.y));
                                 }
-                                if(this.gameBoard.getBoard().canPutPiece(this.myPlayerID, piece, pos.x,pos.y+4) > 0){
-                                    putlist.add(new Point(pos.x,pos.y+4));
+                                if(this.gameBoard.getBoard().canPutPiece(PlayerID, piece, pos.x,pos.y+4) > 0){
+                                    putPointArrayList.add(new Point(pos.x,pos.y+4));
                                 }
                                 break;
-                            
                         }
                     }
-                    if(putlist.size() > 0){
-                        canPutList.put(fullID, putlist);
+                    if(putPointArrayList.size() > 0){
+                        canPutPointHashMap.put(pieceIdFull, putPointArrayList);
                     }
                 }
             }
         }
-        return canPutList;
+        return canPutPointHashMap;
     }
     
     /** ピースの配置を考えるメソッド
      * 引数1:HashMap<String,ArrayList<Point>> <置くピース,置ける点のリスト> canPutList
      * 返り値:String 置くピース
      */
-    private String SelectPutPiece(HashMap<String,ArrayList<Point>> canPutList){
+    private String SelectPutPiece(HashMap<String,ArrayList<Point>> canPutList,int PlayerID){
         String message;
-        String[] pieceDataAndPoint;     //ピース番号分割用  pieceDataAndPoint[0] ピース番号-回転-X-Y　例：5A-3-1-2
+        String[] pieceDataAndPointArray;     //ピース番号分割用  pieceDataAndPoint[0] ピース番号-回転-X-Y　例：5A-3-1-2
         
         //canPutListに含まれるものがあれば、AIで思考 0ならばパス
         if(canPutList.keySet().size() > 0){
             //3と他の手
             if(TurnCount < 4){
-                pieceDataAndPoint = this.theFirstThreeChoices();
+                pieceDataAndPointArray = this.theFirstThreeChoices();
                 //this.nextPutAssess(pieceDataAndPoint);
                 TurnCount++;
-                message = finishMove(pieceDataAndPoint);
+                message = finishMove(pieceDataAndPointArray);
             }else{
                 //3手以降の手を選択する。
                 /*
@@ -220,49 +236,68 @@ public class TajimaAI extends BlokusAI{
                 */
                 
                 //ここからAI
-                //評価リスト
-                HashMap<String[],Integer> evaList = new HashMap<String[],Integer>();
-                String[] pieceMaxpid;
-                int pieceMaxValue;
-                HashMap<String,ArrayList<Point>> canList = this.getCanPutList();
                 
+                String[] pieceIdArrayMaxEvaluationPlayer;
+                String[] pieceIdArrayMaxEvaluationEnemy;
+                int evaluationValueMaxPlayer = 0;
+                int evaluationValueMaxEnemy;
+                Entry<String[],Integer> evaluationEntryPlayer;
+                Entry<String[],Integer> evaluationEntryEnemy;
+                
+                HashMap<String,ArrayList<Point>> canPutPieceHashMapPlayer = this.getCanPutList(this.myPlayerID);
+                HashMap<String,ArrayList<Point>> canPutPieceHashMapEnemy = this.getCanPutList(this.enemyPlayerID);
+                
+                //[敵]canPutPieceの結果をもとに評価リストevaluationHashMapを生成する
+                this.evaluationHashMapEnemy = new HashMap<Integer,ArrayList<String[]>>();
+                //打ちたい手のHashMap
+                if(canPutPieceHashMapEnemy.isEmpty() != true){
+                    for(String pieceId:canPutPieceHashMapEnemy.keySet()){
+                        ArrayList<String> canPutPieceIdArrayList = new ArrayList(Arrays.asList(pieceId.split("-")));
+                        for(Point canPutPiecePoint:canPutPieceHashMapEnemy.get(pieceId)){
+                            canPutPieceIdArrayList.add(String.valueOf(canPutPiecePoint.x));
+                            canPutPieceIdArrayList.add(String.valueOf(canPutPiecePoint.y));
+                            evaluationPushToHashMap(canPutPieceIdArrayList.toArray(new String[0]), nextPutAssess(canPutPieceIdArrayList.toArray(new String[0]),enemyPlayerID),enemyPlayerID);
+                            canPutPieceIdArrayList.remove(canPutPieceIdArrayList.size()-1);
+                            canPutPieceIdArrayList.remove(canPutPieceIdArrayList.size()-1);
+                        }
+                    }  
+                    /*
+                    for(Entry<Integer,ArrayList<String[]>> entry:evaluationHashMapPlayer.entrySet()){
+                        System.out.print(entry.getKey()+":");
+                        System.out.println(Arrays.asList(entry.getValue())+":");
+                    }
+                    */
+                    
+                    //evaluationHashMapをEntryにして配列PutListEnemyに代入し、ソートまで行う
+                    this.evaluationArrayListEnemy = new ArrayList<Entry<Integer,ArrayList<String[]>>>(this.evaluationHashMapEnemy.entrySet());
+                    this.evaluationSort(this.evaluationArrayListEnemy);
+                }
+                
+                //[味方]canPutPieceの結果をもとに評価リストevaluationHashMapを生成する
+                this.evaluationHashMapPlayer = new HashMap<Integer,ArrayList<String[]>>();
                 //canPutListを評価し、評価リストevaList(Key:(String[]) pieceDataAndPoint  Value:(integer)評価値)を出力する
-                for(String pid:canList.keySet()){
-                    String canPieceName[] = pid.split("-");
-                    //String配列に加えたりする用のArrayList
-                    ArrayList<String> list = new ArrayList(Arrays.asList(canPieceName));
-                    for(Point point:canList.get(pid)){
-                        //リストにx,y座標を代入して評価、x,yを消去して再び評価を繰り返す
-                        list.add(String.valueOf(point.x));
-                        list.add(String.valueOf(point.y));
-                        //評価をし、評価リストに代入
-                        int AttackValue = PhaseShift();
-                        System.out.println(this.gameBoard.getScore()[1]);
-                        evaList.put(list.toArray(new String[0]),ValidAdjacentAssess(list.toArray(new String[0])));
-                        list.remove(list.size()-1);
-                        list.remove(list.size()-1);
+                for(String pieceId:canPutPieceHashMapPlayer.keySet()){
+                    ArrayList<String> canPutPieceIdArrayList = new ArrayList(Arrays.asList(pieceId.split("-")));
+                    for(Point canPutPiecePoint:canPutPieceHashMapPlayer.get(pieceId)){
+                        canPutPieceIdArrayList.add(String.valueOf(canPutPiecePoint.x));
+                        canPutPieceIdArrayList.add(String.valueOf(canPutPiecePoint.y));
+                        evaluationPushToHashMap(canPutPieceIdArrayList.toArray(new String[0]), nextPutAssess(canPutPieceIdArrayList.toArray(new String[0]),PlayerID),PlayerID);
+                        canPutPieceIdArrayList.remove(canPutPieceIdArrayList.size()-1);
+                        canPutPieceIdArrayList.remove(canPutPieceIdArrayList.size()-1);
                     }
-                }
+                }  
                 
-                //評価リストのうち、もっとも評価値が高いものを選定する
-                pieceMaxValue = Collections.max(evaList.values());
-                
-                //最高評価値より低い物を削除
-                for (Iterator<String[]> it = evaList.keySet().iterator(); it.hasNext();) {
-                    String[] key = it.next();
-                    if (evaList.get(key) < pieceMaxValue) {
-                        it.remove();
-                    }
-                }
+                //evaluationHashMapをEntryにして配列PutListEnemyに代入し、ソートまで行う
+                this.evaluationArrayListPlayer = new ArrayList<Entry<Integer,ArrayList<String[]>>>(this.evaluationHashMapPlayer.entrySet());
+                this.evaluationSort(this.evaluationArrayListPlayer);
 
-                //HashMapのKeyを1つランダムで選択する
-                pieceMaxpid = this.getRandomHashMapKey(evaList);
-                
+                pieceIdArrayMaxEvaluationPlayer = this.getMaxEvaluationList(evaluationArrayListPlayer);                    
+                    
                 //評価値
-                //System.out.println("Turn "+this.TurnCount+" 評価値:"+evaList.get(pieceMaxpid)+"  Piece:"+Arrays.asList(pieceMaxpid) ); 
-                //System.out.println(this.havingPeices);
+                System.out.println("Turn "+this.TurnCount+" 評価値:"+this.evaluationArrayListPlayer.get(0).getKey()+"  Piece:"+Arrays.asList(pieceIdArrayMaxEvaluationPlayer) ); 
+                System.out.println(this.havingPeices);
                 
-                message = finishMove(pieceMaxpid);
+                message = finishMove(pieceIdArrayMaxEvaluationPlayer);
                 TurnCount++;
             }
             
@@ -273,116 +308,146 @@ public class TajimaAI extends BlokusAI{
         return message;
     }
     
-    private int PhaseShift(){
-        if(this.gameBoard.getScore()[1] > 45){return 5;
-        }else{return 1;}
-    }    
-        
-    private int ValidAdjacentAssess(String[] pieceDataAndPoint){
-        Piece piece = new Piece(pieceDataAndPoint[0],Integer.parseInt(pieceDataAndPoint[1]));
-        int x = Integer.parseInt(pieceDataAndPoint[2]);
-        int y = Integer.parseInt(pieceDataAndPoint[3]);
-        int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
-        int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
-        
-        //ディープコピー
-        for (int i = 0; i < nowBoard.length; i++) {
-            shadowBoard[i] = nowBoard[i].clone();
-        }
-
-        shadowBoard = BoardSub.putPiece(this.myPlayerID,piece,x,y,shadowBoard);
-        
-        ArrayList<Point> newPieceList = new ArrayList<Point>();
-        for(int Py = 0;Py < BoardSub.BOARDSIZE;Py++){
-            for(int Px = 0;Px < BoardSub.BOARDSIZE;Px++){
-                if(nowBoard[Py][Px] != shadowBoard[Py][Px]) newPieceList.add(new Point(Px,Py));
-            }
-        }
-        
-        return BoardSub.ValidAdjacentSet(this.myPlayerID, nowBoard, newPieceList);
-    }
     /** 評価関数 この関数で、手の評価を行う
      * 引数1:String[] pieceDataAndPoint
      * 返り値:int 評価値
      */
-    private int nextPutAssess(String[] pieceDataAndPoint){
-        Piece piece = new Piece(pieceDataAndPoint[0],Integer.parseInt(pieceDataAndPoint[1]));
-        int x = Integer.parseInt(pieceDataAndPoint[2]);
-        int y = Integer.parseInt(pieceDataAndPoint[3]);
-        int[][] nowBoard = this.gameBoard.getBoardState();  //現在のボード A
-        int[][] shadowBoard = new int[nowBoard.length][];   //未来のボード B
-        int Katen;
-        int Hatten;
-        int evaluation;                                 //評価値
-        ArrayList<Point> AandB = new ArrayList<Point>();
-        ArrayList<Point> onlyA = new ArrayList<Point>();
-        ArrayList<Point> onlyB = new ArrayList<Point>();
+    private int nextPutAssess(String[] pieceDataAndPoint,int PlayerID){
+        Piece pieceIdAndAngle = new Piece(pieceDataAndPoint[0],Integer.parseInt(pieceDataAndPoint[1]));
+        int piecePlaceX = Integer.parseInt(pieceDataAndPoint[2]);               
+        int piecePlaceY = Integer.parseInt(pieceDataAndPoint[3]);
+        int[][] nowABoard = this.gameBoard.getBoardState();                     //現在のボード A
+        int[][] shadowBBoardPlayer = new int[nowABoard.length][];               //自分手未来のボード B
+        int[][] shadowBBoardEnemy = new int[nowABoard.length][];                //相手手未来のボード B
+        int gainAdd;                                                            //自分点数加点度
+        int gainReduce;                                                         //相手点数削減度
+        int gainGrowth;                                                         //自分手発展度
+        int gainRecession;                                                      //相手手削減度
+        int evaluation = 0;                                                     //評価値
+        ArrayList<Point> AandBPointArrayListPlayer = new ArrayList<Point>();
+        ArrayList<Point> onlyAPointArrayListPlayer = new ArrayList<Point>();
+        ArrayList<Point> onlyBPointArrayListPlayer = new ArrayList<Point>();
+        ArrayList<Point> AandBPointArrayListEnemy = new ArrayList<Point>();
+        ArrayList<Point> onlyAPointArrayListEnemy = new ArrayList<Point>();
+        ArrayList<Point> onlyBPointArrayListEnemy = new ArrayList<Point>();
         //ディープコピー
-        for (int i = 0; i < nowBoard.length; i++) {
-            shadowBoard[i] = nowBoard[i].clone();
+        for (int i = 0; i < nowABoard.length; i++) {
+            shadowBBoardPlayer[i] = nowABoard[i].clone();
+            shadowBBoardEnemy[i] = nowABoard[i].clone();
         }
         //現在と未来の角リストを作成する
-        ArrayList<Point> nowCornerList;
-        ArrayList<Point> shadowCornerList;
-        shadowBoard = BoardSub.putPiece(this.myPlayerID,piece,x,y,shadowBoard);
+        ArrayList<Point> nowCornerPointArrayListPlayer;
+        ArrayList<Point> shadowCornerPointArrayListPlayer;
+        ArrayList<Point> nowCornerPointArrayListEnemy;
+        ArrayList<Point> shadowCornerPointArrayListEnemy;
+        shadowBBoardPlayer = BoardSub.putPiece(PlayerID,pieceIdAndAngle,piecePlaceX,piecePlaceY,shadowBBoardPlayer);
+        if(PlayerID == 0){
+            shadowBBoardEnemy = BoardSub.putPiece(1, pieceIdAndAngle, piecePlaceX, piecePlaceY, shadowBBoardEnemy);
+        }else{
+            shadowBBoardEnemy = BoardSub.putPiece(0, pieceIdAndAngle, piecePlaceX, piecePlaceY, shadowBBoardEnemy);
+        }
 
         //それぞれ評価する
-        nowCornerList = BoardSub.ValidCornerTroutSet(this.myPlayerID,nowBoard);
-        shadowCornerList = BoardSub.ValidCornerTroutSet(this.myPlayerID,shadowBoard);
+        nowCornerPointArrayListPlayer = BoardSub.ValidCornerTroutSet(PlayerID,nowABoard);
+        shadowCornerPointArrayListPlayer = BoardSub.ValidCornerTroutSet(PlayerID,shadowBBoardPlayer);
+        if(PlayerID == 0){
+            nowCornerPointArrayListEnemy = BoardSub.ValidCornerTroutSet(1, nowABoard);
+            shadowCornerPointArrayListEnemy = BoardSub.ValidCornerTroutSet(1, shadowBBoardEnemy);
+        }else{
+            nowCornerPointArrayListEnemy = BoardSub.ValidCornerTroutSet(0, nowABoard);
+            shadowCornerPointArrayListEnemy = BoardSub.ValidCornerTroutSet(0, shadowBBoardEnemy);
+        }
+        //System.out.println(rivalCornerList);
         
-        for(Point value:shadowCornerList){
-            onlyB.add(value);
+        for(Point shadowCornerPointEnemy:shadowCornerPointArrayListEnemy){
+            onlyBPointArrayListEnemy.add(shadowCornerPointEnemy);
+        }
+        for(Point shadowCornerPointPlayer:shadowCornerPointArrayListPlayer){
+            onlyBPointArrayListPlayer.add(shadowCornerPointPlayer);
         }
         
         //それぞれを評価
-        for(Point value:nowCornerList){
-            //AandB
-            if(shadowCornerList.contains(value)){
-                AandB.add(value);
-                onlyB.remove(value);
+        for(Point shadowCornerPointEnemy:nowCornerPointArrayListEnemy){
+            if(shadowCornerPointArrayListEnemy.contains(shadowCornerPointEnemy)){
+                AandBPointArrayListEnemy.add(shadowCornerPointEnemy);
+                onlyBPointArrayListEnemy.remove(shadowCornerPointEnemy);
             }else{
-                onlyA.add(value);
+                onlyAPointArrayListEnemy.add(shadowCornerPointEnemy);
+            }
+        }
+        for(Point shadowCornerPointPlayer:nowCornerPointArrayListPlayer){
+            //AandB
+            if(shadowCornerPointArrayListPlayer.contains(shadowCornerPointPlayer)){
+                AandBPointArrayListPlayer.add(shadowCornerPointPlayer);
+                onlyBPointArrayListPlayer.remove(shadowCornerPointPlayer);
+            }else{
+                onlyAPointArrayListPlayer.add(shadowCornerPointPlayer);
             }
         }
         
-        
         //消えた手数を再評価
-        for(Iterator<Point> it = onlyA.iterator(); it.hasNext();){
-            Point Apiece = it.next();
-            if(shadowBoard[Apiece.y][Apiece.x] != this.myPlayerID){
+        for(Iterator<Point> it = onlyAPointArrayListPlayer.iterator(); it.hasNext();){
+            Point piecePointAPlayer = it.next();
+            if(shadowBBoardPlayer[piecePointAPlayer.y][piecePointAPlayer.x] != PlayerID){
                 it.remove();
             }
         }
-        
-        /*
-        System.out.println("\n**************評価関数出力***************");
-        System.out.println("Turn "+this.TurnCount);
-        System.out.println(nowCornerList);
-        System.out.println("置くピース:"+Arrays.toString(pieceDataAndPoint));
-        System.out.println(shadowCornerList);
-        System.out.println("onlyA:"+onlyA);
-        System.out.println("onlyB:"+onlyB);
-        //System.out.println("AandB:"+AandB);
-        System.out.println("消えた手数（加点）："+onlyA.size());
-        System.out.println("増える手数（発展）："+onlyB.size());
-        
-        System.out.println("***************************************\n");
-        */
-        
-        //評価値
-        //加点方法
-        Katen = (onlyA.size()-1)*Integer.parseInt(pieceDataAndPoint[0].substring(0,1));
-        //System.out.println(onlyA);
-        //System.out.println(onlyA.size());
-        Hatten = onlyB.size();
-        
-        if(Katen >= 5){
-            evaluation = Katen;
-            evaluation += Hatten; 
-        }else{
-           evaluation = Hatten;
+        for(Iterator<Point> it = onlyAPointArrayListEnemy.iterator(); it.hasNext();){
+            Point piecePointAEnemy = it.next();
+            if(PlayerID == 0){
+               if(shadowBBoardEnemy[piecePointAEnemy.y][piecePointAEnemy.x] != 1){
+                   it.remove();
+               }
+            }else{
+                if(shadowBBoardEnemy[piecePointAEnemy.y][piecePointAEnemy.x] != 0){
+                   it.remove();
+               }
+            }
         }
         
+        /*if(onlyrA.size() >= 1){
+            System.out.println("\n**************評価関数出力***************");
+            System.out.println("Turn "+this.TurnCount);
+            System.out.println(rivalCornerList);
+            System.out.println("置くピース:"+Arrays.toString(pieceDataAndPoint));
+            System.out.println(rshadowCornerList);
+            System.out.println("onlyrA:"+onlyrA);
+            System.out.println("onlyrB:"+onlyrB);
+            System.out.println("AandB:"+AandB);
+            System.out.println("消えた手数（相手）："+onlyrA.size());
+            System.out.println("増える手数（発展）："+onlyB.size());
+
+            System.out.println("***************************************\n");
+        }
+        */
+        //評価値
+        //加点方法
+        gainAdd = (onlyAPointArrayListPlayer.size()-1)*Integer.parseInt(pieceDataAndPoint[0].substring(0,1));
+        gainReduce = onlyAPointArrayListEnemy.size();
+        //System.out.println(Genten);
+        //System.out.println(onlyA);
+        //System.out.println(onlyA.size());
+        gainGrowth = onlyBPointArrayListPlayer.size();
+        gainRecession = onlyBPointArrayListEnemy.size();
+        
+        //if(Katen >= 5){
+            //evaluation = Katen;
+            //evaluation += Hatten; 
+        //}else{
+           //evaluation = Hatten;
+        //}
+        
+        //if(Genten == 0){
+        //    evaluation = Katen + Hatten;
+        //}else{
+        //    evaluation = Genten;
+        //}
+        if(gainReduce > 0){
+            evaluation = gainReduce * 100 + gainAdd + gainGrowth;
+        }else{
+            evaluation = gainAdd + gainGrowth;
+        }
+        //System.out.println(evaluation);
         return evaluation;
     }
     
@@ -453,6 +518,7 @@ public class TajimaAI extends BlokusAI{
         return message;
     }
     
+    
     /** ターン終了（パス）処理 **/
     private String passMove(){
         this.gameBoard.pass(this.myPlayerID);
@@ -502,12 +568,14 @@ public class TajimaAI extends BlokusAI{
             } else if(message.toUpperCase().equals("102 PLAYERID 0")){
                 //先手の場合
                 this.myPlayerID = 0;
+                this.enemyPlayerID = 1;
                 super.gameBoard.setPlayerName(0,"RandomAI");
                 super.gameBoard.setPlayerName(1,"opponent");
                 this.state = Game.STATE_WAIT_PLAYER_PLAY;
             } else if(message.toUpperCase().equals("102 PLAYERID 1")){
                 //後手の場合
                 this.myPlayerID = 1;
+                this.enemyPlayerID = 0;
                 super.gameBoard.setPlayerName(1,"RandomAI");
                 super.gameBoard.setPlayerName(0,"opponent");
                 this.state = Game.STATE_WAIT_PLAYER_PLAY;
@@ -520,6 +588,9 @@ public class TajimaAI extends BlokusAI{
                 int x = Integer.parseInt(mc.group(2));
                 int y = Integer.parseInt(mc.group(3));
                 String PieceID = mc.group(4);
+                this.enemyusedPeices.add(PieceID);
+                this.enemyhavingPeices.remove(PieceID);
+                System.out.println("ok");
                 int PieceDirection = Integer.parseInt(mc.group(5));
                 this.gameBoard.play(pid, new Piece(PieceID,PieceDirection) , x, y);
             } else if(mc2.matches()){//402 PASSED [01]
@@ -528,11 +599,11 @@ public class TajimaAI extends BlokusAI{
             } else if(message.toUpperCase().equals("404 DOPLAY")){
                 
                 // おくことができるピースとその場所を確認（総当りで探します）
-                HashMap<String,ArrayList<Point>> canPutList = getCanPutList();
+                HashMap<String,ArrayList<Point>> canPutList = getCanPutList(this.myPlayerID);
                 
                 // サーバに送るメッセージを決定
                 //このメソッドを修正すれば、最低限の自分なりのプログラムが作れます。
-                String sendmessage = SelectPutPiece(canPutList);
+                String sendmessage = SelectPutPiece(canPutList,this.myPlayerID);
                 this.connecter.sendMessage(sendmessage);
                 this.userInterface.addMessage(sendmessage);
             } else if(message.toUpperCase().equals("501 WINNER 0")){ 
@@ -600,5 +671,50 @@ public class TajimaAI extends BlokusAI{
         }
         
     }
+
+    //ArrayList<Entry>をValue値でソートを行う
+    private void evaluationSort(ArrayList<Entry<Integer,ArrayList<String[]>>> List) {
+        Collections.sort(List, new Comparator<Entry<Integer,ArrayList<String[]>>>() {
+            //比較関数
+            @Override
+            public int compare(Entry<Integer,ArrayList<String[]>> o1, Entry<Integer,ArrayList<String[]>> o2) {
+                //return o1.getValue().compareTo(o2.getValue());    //昇順
+                return o2.getKey().compareTo(o1.getKey());    //降順
+            }
+        });
+    }
+    
+    //降順ソート済みのArrayList<Entry>内の最大値IDをランダムで取得し、Entryを返却
+    private String[] getMaxEvaluationList(ArrayList<Entry<Integer,ArrayList<String[]>>> SortList){
+        //最大値リスト
+        
+        return SortList.get(0).getValue().get((int)(Math.random() * SortList.get(0).getValue().size()));
+    }
+
+    private void evaluationPushToHashMap(String[] PieceID, int evaluation,int PlayerID) {
+        if(PlayerID == this.myPlayerID){
+            //すでに評価値が存在する場合は取り出して代入する
+            if(this.evaluationHashMapPlayer.containsKey(evaluation)){
+                this.evaluationHashMapPlayer.get(evaluation).add(PieceID);
+            }else{
+                ArrayList<String[]> list = new ArrayList<String[]>();
+                list.add(PieceID);
+                this.evaluationHashMapPlayer.put(evaluation,list);
+            }
+        }else{
+            //すでに評価値が存在する場合は取り出して代入する
+            if(this.evaluationHashMapEnemy.containsKey(evaluation)){
+                this.evaluationHashMapEnemy.get(evaluation).add(PieceID);
+            }else{
+                ArrayList<String[]> list = new ArrayList<String[]>();
+                list.add(PieceID);
+                this.evaluationHashMapEnemy.put(evaluation,list);
+            }
+        }
+    }
+    
 }
+
+
+
 
